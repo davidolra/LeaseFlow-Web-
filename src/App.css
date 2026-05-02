@@ -1,184 +1,549 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
 
-  &:hover {
-    border-color: var(--accent-border);
+
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
   }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  to {
+    transform: rotate(360deg);
   }
 }
 
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
   }
 }
 
-#center {
+.card {
+  padding: 2em;
+}
+
+.card {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  height: 100%; /* para que tome toda la altura disponible */
 }
 
-#next-steps {
+.card-body {
+  flex: 1; /* para que ocupe el espacio disponible */
   display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+  flex-direction: column;
 }
 
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+.card-body > .btn {
+  margin-top: auto; /* empuja el botón hacia el fondo */
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
 
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
+.read-the-docs {
+  color: #888;
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
+.carousel-inner img {
   width: 100%;
+  max-height: 400px; /* ajusta altura a tu gusto */
+  object-fit: cover;
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
+.carousel-container img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;       /* adapta bien la imagen */
+  border: none;
+  display: block;
+}
+
+/*formulario estilos*/ 
+/* Estilos específicos para el formulario de contacto */
+.contact-form-container {
+  /* Diseño del contenedor del formulario */
+  max-width: 500px;
+  margin: 0 auto 3rem;
+  padding: 1.5rem 2rem;
+  background-color: #f9faf9;
+  border: 2px solid #064420;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  color: #222;
+}
+
+.contact-form-container h1 {
+  color: #333 !important;
+}
+
+.contact-form-container p.lead {
+  color: #666 !important;
+}
+
+
+/* Estilo de los campos de entrada solo para este formulario */
+.contact-form-container .form-control {
+  background-color: #184c2b; /* fondo verde oscuro */
+  color: #d4e9d4;  /* texto en verde claro */
+  border: 1px solid #2e6b3a; /* borde verde */
+  padding: 10px;
+  border-radius: 6px;
+  transition: border-color 0.3s ease;
+}
+
+/* Estilo de enfoque para los campos */
+.contact-form-container .form-control:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 5px #4caf50;
+}
+
+/* Estilos para el placeholder en campos de entrada y texto */
+.contact-form-container input::placeholder,
+.contact-form-container textarea::placeholder {
+  color: #b0d0b0; /* Gris suave para los placeholders */
+}
+
+/* Mensajes de error en el formulario de contacto */
+.contact-form-container .text-danger {
+  color: #ff6b6b; /* color rojo para mensajes de error */
+  font-weight: 600;
+}
+
+/* Estilos para el botón de envío solo en contacto */
+.contact-form-container .btn {
+  background-color: #2e6b3a; /* fondo verde oscuro */
+  color: #d4e9d4;  /* texto en verde claro */
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+}
+/* Hover sobre el botón */
+.contact-form-container .btn:hover:not(:disabled) {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+/* Botón deshabilitado */
+.contact-form-container .btn:disabled {
+  background-color: #4a7c4a;
+  cursor: not-allowed;
+}
+
+/* Estilos del título y subtítulos en el formulario de contacto */
+.contact-form-container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.contact-form-container .lead {
+  font-style: italic;
+  color: #999;
+  font-size: 1.1rem;
+}
+
+/* Aseguramos que el formulario no se afecte por los estilos de otros formularios */
+.contact-form-container .form-label {
+  color: #020202;
+  font-weight: 600;
+}
+
+
+
+/*estilo de nosotros*/
+/* Contenedor principal */
+.nosotros-container {
+  max-width: 900px;                  /* ancho limitado para buena lectura */
+  margin: 3rem auto;                 /* centrado con espacio arriba y abajo */
+  padding: 2rem 1.5rem;              /* espacio interno */
+  background-color: #1b3a2e;         /* verde oscuro de fondo */
+  border-radius: 15px;               /* bordes redondeados suaves */
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4); /* sombra sutil */
+  color: #ffffff;                     /* texto blanco para contraste */
+  text-align: center;                 /* centra títulos y párrafos */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nosotros-container:hover {
+  transform: translateY(-3px);       /* efecto sutil al pasar el mouse */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.nosotros-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #3e7d54;                    /* verde medio para títulos */
+}
+
+.nosotros-container p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.nosotros-container p strong {
+  color: #a5d6a7;                     /* resaltar Leaseflow con verde claro */
+}
+
+/* Responsive: Tablets */
+@media (max-width: 768px) {
+  .nosotros-container {
+    padding: 1.5rem 1rem;
   }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+  .nosotros-container h1 {
+    font-size: 2rem;
   }
+  .nosotros-container p {
+    font-size: 1rem;
+  }
+}
+
+/* Responsive: Móviles */
+@media (max-width: 480px) {
+  .nosotros-container {
+    padding: 1rem 0.8rem;
+    margin: 2rem 1rem;
+  }
+  .nosotros-container h1 {
+    font-size: 1.7rem;
+  }
+  .nosotros-container p {
+    font-size: 0.95rem;
+  }
+}
+
+.nosotros-container {
+  margin-top: 100px;  /* separa arriba */
+  margin-bottom: 60px; /* separa abajo */
+}
+
+
+
+/*navbar*/ 
+.navbar-custom {
+  background-color: #1b3a2e;
+  padding: 0.8rem 1.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-custom .navbar-brand {
+  color: #e2f4ec;
+  font-weight: 600;
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+}
+
+.navbar-custom .nav-link {
+  color: #cfe9dc;
+  margin: 0 0.6rem;
+  transition: color 0.3s ease;
+}
+
+.navbar-custom .nav-link:hover {
+  color: #8fe4b0; /* verde claro al pasar el mouse */
+}
+
+.navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.navbar-toggler-icon {
+  filter: brightness(90%);
+}
+
+/* Título principal */
+.main-content h1.display-5 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 900;
+  font-size: 4.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #2c3e50 !important; /* azul oscuro/gris */
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Subtítulo */
+.main-content p.lead {
+  font-size: 1.4rem;
+  text-align: center;
+  color: #333333; /* gris oscuro */
+  margin-bottom: 2.5rem;
+  font-weight: 600;
+}
+
+.hero-search-section {
+  background-color: #f9faf9;       /* Fondo muy claro */
+  border: 2px solid #064420;       /* Borde verde oscuro */
+  max-width: 800px;
+  margin: 1.5rem auto 2rem;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-weight: 400;
+  color: #222;                     /* Texto gris oscuro */
+}
+
+/* Inputs y selects blancos con borde verde oscuro */
+.hero-search-section input,
+.hero-search-section select {
+  background-color: white;
+  color: #222;
+  border: 1.5px solid #064420;
+  border-radius: 5px;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.hero-search-section input::placeholder {
+  color: #666;
+}
+
+.hero-search-section input:focus,
+.hero-search-section select:focus {
+  outline: none;
+  border-color: #087a34;
+  box-shadow: 0 0 6px rgba(8, 122, 52, 0.5);
+}
+
+/* Botón verde claro elegante */
+.hero-search-section .btn {
+  background-color: #087a34;  /* verde más claro que el borde */
+  color: white;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.hero-search-section .btn:hover {
+  background-color: #064420;   /* verde oscuro al pasar el mouse */
+}
+
+
+.hero-search-section p.lead {
+  color: #5a6b55;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* Inputs y selects más compactos */
+.hero-search-section input.form-control,
+.hero-search-section select.form-select {
+  border: 1px solid #c9d1c9;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  background-color: white;
+  color: #2f3b2d;
+  transition: border-color 0.3s ease;
+  height: 36px; /* más bajo */
+}
+
+.hero-search-section input.form-control:focus,
+.hero-search-section select.form-select:focus {
+  border-color: #8aae8a;
+  outline: none;
+  box-shadow: 0 0 4px rgba(138, 174, 138, 0.4);
+}
+
+/* Botón pequeño y limpio */
+.hero-search-section button.btn {
+  background-color: #8aae8a;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  height: 36px;
+}
+
+.hero-search-section button.btn:hover:not(:disabled) {
+  background-color: #064420;
+  cursor: pointer;
+}
+
+/* Más compacto el form */
+.hero-search-section form.row.g-3 > div {
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 576px) {
+  .hero-search-section form.row.g-3 > div {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+
+
+
+/*  FOOTER */
+.footer {
+  background-color: #1b3a2e;
+  color: #ffffff;
+  text-align: center;
+  padding: 1rem 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.footer a {
+  color: #a5d6a7;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #7cc38f;
+}
+
+footer {
+  width: 100%;
+}
+
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4; /* Fondo gris claro, puedes ajustar el color */
+  background-image: radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px); /* Patrón de puntos sutil */
+  background-size: 20px 20px;
+  background-repeat: repeat;
+}
+
+/* compensar el navbar fijo */
+.main-content {
+  padding-top: 80px; /* ajusta según la altura real de tu navbar */
+}
+
+/*la página Home no necesita ese padding */
+.home-page .main-content {
+  padding-top: 0;
+}
+
+
+/* Tarjetas de opiniones */
+.comentario-card {
+  border-radius: 15px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.comentario-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.comentario-card .card-title {
+  font-weight: 600;
+  color: #343a40;
+}
+
+.comentario-card .card-text {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.comentario-card .text-warning {
+  font-size: 1rem;
+}
+
+/* TARJETA DESTACADA CENTRADA ABAJO */
+.propiedad-destacada .card-img-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Todo se alinea abajo */
+  align-items: center; /* Centra horizontalmente */
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center; /* Centra el texto */
+}
+
+
+.propiedad-destacada .card-title {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.propiedad-destacada .card-text {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.propiedad-destacada .btn {
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+}
+
+
+/*valoraciones*/
+
+.valoracion-stars span {
+  font-size: 2rem;
+  cursor: pointer;
+  color: #ccc; /* gris por defecto */
+  transition: transform 0.2s, color 0.2s;
+}
+
+.valoracion-stars span.hover,
+.valoracion-stars span.selected {
+  color: #ffc107; /* amarillo para seleccionado */
+  transform: scale(1.3);
+}
+
+.valoracion-btn {
+  background-color: #2e6b3a;
+  color: #d4e9d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 700;
+  width: 100%;
+  transition: transform 0.1s, background-color 0.3s;
+}
+
+.valoracion-btn:hover:not(:disabled) {
+  background-color: #4caf50;
+  cursor: pointer;
+}
+
+.valoracion-btn:active {
+  transform: scale(0.95);
+}
+
+.valoracion-btn:disabled {
+  background-color: #4a7c4a;
+  cursor: not-allowed;
+}
+
+.valoraciones-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem; /* tamaño más grande */
+  font-weight: 700; /*más destacado */
 }
