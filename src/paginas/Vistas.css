@@ -1,8 +1,8 @@
 .vistas-counter {
   font-size: 2rem;
   font-weight: bold;
-  color: #099e54;
-  text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  color: #102a5c;
+  text-shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -26,9 +26,9 @@
 
 /* cambio de colores */
 @keyframes colorChange {
-  0% { color: #22d3ff; }
-  25% { color: #4caf50; }
-  50% { color: #2196f3; }
-  75% { color: #ffeb3b; }
-  100% { color: #ff22e2; }
+  0% { color: #0b1b3a; }
+  25% { color: #102a5c; }
+  50% { color: #6d3df5; }
+  75% { color: #8b5cf6; }
+  100% { color: #0b1b3a; }
 }

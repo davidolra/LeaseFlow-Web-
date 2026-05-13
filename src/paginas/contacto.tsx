@@ -186,7 +186,8 @@ const Contacto: React.FC = () => {
   }, [nombre, email, asunto, mensaje, telefono, errores, loading]);
 
   return (
-    <div className="contact-form-container">
+    <div className="container">
+      <div className="contact-form-container">
       <h1 className="fw-bold display-5 mb-3">Contacto 📨</h1>
       <p className="lead mb-4">
         Completa el formulario y nos pondremos en contacto contigo.
@@ -200,8 +201,8 @@ const Contacto: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="w-100" style={{ maxWidth: "500px" }}>
-        <div className="mb-3">
+      <form onSubmit={handleSubmit} className="row g-3">
+        <div className="col-12 col-md-6">
           <label htmlFor="nombre" className="form-label">
             Nombre <span className="text-danger">*</span>
           </label>
@@ -217,7 +218,7 @@ const Contacto: React.FC = () => {
           {errores.nombre && <p className="text-danger mt-1">{errores.nombre}</p>}
         </div>
 
-        <div className="mb-3">
+        <div className="col-12 col-md-6">
           <label htmlFor="email" className="form-label">
             Email <span className="text-danger">*</span>
           </label>
@@ -233,7 +234,7 @@ const Contacto: React.FC = () => {
           {errores.email && <p className="text-danger mt-1">{errores.email}</p>}
         </div>
 
-        <div className="mb-3">
+        <div className="col-12 col-md-6">
           <label htmlFor="telefono" className="form-label">
             Teléfono <small className="text-muted">(opcional)</small>
           </label>
@@ -249,7 +250,7 @@ const Contacto: React.FC = () => {
           {errores.telefono && <p className="text-danger mt-1">{errores.telefono}</p>}
         </div>
 
-        <div className="mb-3">
+        <div className="col-12 col-md-6">
           <label htmlFor="asunto" className="form-label">
             Asunto <span className="text-danger">*</span>
           </label>
@@ -266,7 +267,7 @@ const Contacto: React.FC = () => {
           <small className="text-muted">{asunto.length}/200 caracteres</small>
         </div>
 
-        <div className="mb-3">
+        <div className="col-12">
           <label htmlFor="mensaje" className="form-label">
             Mensaje <span className="text-danger">*</span>
           </label>
@@ -283,20 +284,22 @@ const Contacto: React.FC = () => {
           <small className="text-muted">{mensaje.length}/5000 caracteres</small>
         </div>
 
-        <button type="submit" className="btn w-100" disabled={botonDeshabilitado}>
-          {loading ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              Enviando...
-            </>
-          ) : (
-            "Enviar Mensaje"
-          )}
-        </button>
+        <div className="col-12">
+          <button type="submit" className="btn w-100" disabled={botonDeshabilitado}>
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Enviando...
+              </>
+            ) : (
+              "Enviar Mensaje"
+            )}
+          </button>
+        </div>
       </form>
 
       {estadoEnvio && (
@@ -307,14 +310,15 @@ const Contacto: React.FC = () => {
             borderRadius: "6px",
             textAlign: "center",
             fontWeight: "600",
-            backgroundColor: estadoEnvio.startsWith("✅") ? "#a5d6a7" : "#ffcdd2",
-            color: estadoEnvio.startsWith("✅") ? "#064420" : "#d32f2f",
-            border: `1px solid ${estadoEnvio.startsWith("✅") ? "#2e6b3a" : "#ef9a9a"}`,
+            backgroundColor: estadoEnvio.startsWith("✅") ? "#ede9fe" : "#fee2e2",
+            color: estadoEnvio.startsWith("✅") ? "#0b1b3a" : "#991b1b",
+            border: `1px solid ${estadoEnvio.startsWith("✅") ? "rgba(109, 61, 245, 0.45)" : "#fecaca"}`,
           }}
         >
           {estadoEnvio}
         </div>
       )}
+      </div>
     </div>
   );
 };

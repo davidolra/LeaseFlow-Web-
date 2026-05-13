@@ -72,7 +72,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
-      <div className="login-container p-4 bg-light rounded shadow" style={{ width: "100%", maxWidth: "400px" }}>
+      <div className="nosotros-container lf-auth-card">
         <h2 className="text-center mb-4">Iniciar sesión</h2>
 
         {errorMessage && (
@@ -134,7 +134,7 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-3 p-3 bg-info bg-opacity-10 border border-info rounded">
+        <div className="mt-3 p-3 lf-auth-tip">
           <small className="text-muted d-block mb-2"><strong>Usuarios de prueba:</strong></small>
           <small className="d-block">
             • <strong>Usuario válido:</strong> juan.perez@email.com / password123
