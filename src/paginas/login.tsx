@@ -6,6 +6,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showTestUsers, setShowTestUsers] = useState(false);
   
   const { login, loading, error } = useUsuarios();
   const navigate = useNavigate();
@@ -72,7 +73,16 @@ const Login: React.FC = () => {
 
   return (
     <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
-      <div className="nosotros-container lf-auth-card">
+      <div className="nosotros-container lf-auth-card position-relative">
+        <button
+          type="button"
+          className="btn btn-link btn-sm position-absolute top-0 end-0 m-2 text-muted"
+          aria-label="Ayuda"
+          onClick={() => setShowTestUsers((v) => !v)}
+          style={{ textDecoration: "none" }}
+        >
+          ?
+        </button>
         <h2 className="text-center mb-4">Iniciar sesión</h2>
 
         {errorMessage && (
@@ -134,15 +144,18 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-3 p-3 lf-auth-tip">
-          <small className="text-muted d-block mb-2"><strong>Usuarios de prueba:</strong></small>
-          <small className="d-block">
-            • <strong>Usuario válido:</strong> juan.perez@email.com / password123
-          </small>
-          <small className="d-block text-danger mt-2">
-            ⚠️ Nota: Las contraseñas deben tener mínimo 8 caracteres
-          </small>
-        </div>
+        {showTestUsers ? (
+          <div className="mt-3 p-3 lf-auth-tip">
+            <small className="text-muted d-block mb-2"><strong>Usuarios de prueba:</strong></small>
+            <pre className="mb-0 small" style={{ whiteSpace: "pre-wrap" }}>
+da.olaver@duocuc.cl / Admin123!
+fs.gonzalez@duocuc.cl / Miauu123!
+juan.perez@email.com / Miau123!
+maria.lopez@duoc.cl / Miau123!
+pedro.ramirez@email.com / Miau123!
+            </pre>
+          </div>
+        ) : null}
 
         <p className="text-center mt-3">
           ¿No tienes cuenta?{" "}

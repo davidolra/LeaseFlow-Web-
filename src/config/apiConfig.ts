@@ -5,14 +5,23 @@
  * IMPORTANTE: Todos los microservicios deben estar corriendo para que el frontend funcione correctamente
  */
 
+const DEV_PROXY_BASES = {
+  APPLICATION_SERVICE: '/applicationservice/api',
+  USER_SERVICE: '/userservice/api',
+  PROPERTY_SERVICE: '/propertyservice/api',
+  DOCUMENT_SERVICE: '/documentservice/api',
+  CONTACT_SERVICE: '/contactservice/api',
+  REVIEW_SERVICE: '/reviewservice/api',
+} as const;
+
 export const API_CONFIG = {
   // URL base de los microservicios
-  APPLICATION_SERVICE: 'http://localhost:8084/api',
-  USER_SERVICE: 'http://localhost:8081/api',
-  PROPERTY_SERVICE: 'http://localhost:8082/api',
-  DOCUMENT_SERVICE: 'http://localhost:8083/api',
-  CONTACT_SERVICE: 'http://localhost:8085/api',
-  REVIEW_SERVICE: 'http://localhost:8086/api',
+  APPLICATION_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.APPLICATION_SERVICE : 'http://localhost:8084/api',
+  USER_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.USER_SERVICE : 'http://localhost:8081/api',
+  PROPERTY_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.PROPERTY_SERVICE : 'http://localhost:8082/api',
+  DOCUMENT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.DOCUMENT_SERVICE : 'http://localhost:8083/api',
+  CONTACT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.CONTACT_SERVICE : 'http://localhost:8085/api',
+  REVIEW_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.REVIEW_SERVICE : 'http://localhost:8086/api',
   
   // Timeouts (en milisegundos)
   TIMEOUT: 10000, // 10 segundos

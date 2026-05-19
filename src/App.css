@@ -200,6 +200,15 @@ body {
   margin-top: auto; /* empuja el botón hacia el fondo */
 }
 
+.lf-profile .card {
+  height: auto;
+}
+
+.lf-profile .card-body {
+  flex: initial;
+  display: block;
+}
+
 
 .read-the-docs {
   color: #888;

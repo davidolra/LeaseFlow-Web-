@@ -110,9 +110,9 @@ export const solicitudService = {
   /**
    * Obtener solicitudes de un usuario
    */
-  async obtenerPorUsuario(usuarioId: number, includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
+  async obtenerPorUsuario(usuarioId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}?includeDetails=${includeDetails}`;
+      const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS,
@@ -132,9 +132,9 @@ export const solicitudService = {
   /**
    * Obtener solicitudes de una propiedad
    */
-  async obtenerPorPropiedad(propiedadId: number, includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
+  async obtenerPorPropiedad(propiedadId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}?includeDetails=${includeDetails}`;
+      const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS,
@@ -160,10 +160,9 @@ export const solicitudService = {
     nuevoEstado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA'
   ): Promise<SolicitudArriendoDTO> {
     try {
-      const response = await fetch(`${BASE_URL}/solicitudes/${id}/estado`, {
+      const response = await fetch(`${BASE_URL}/solicitudes/${id}/estado?estado=${encodeURIComponent(nuevoEstado)}`, {
         method: 'PATCH',
         headers: API_CONFIG.HEADERS,
-        body: JSON.stringify({ estado: nuevoEstado }),
       });
 
       if (!response.ok) {
@@ -173,46 +172,6 @@ export const solicitudService = {
       return await response.json();
     } catch (error) {
       console.error(`Error al actualizar estado de solicitud ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar solicitud
-   */
-  async eliminar(id: number): Promise<void> {
-    try {
-      const response = await fetch(`${BASE_URL}/solicitudes/${id}`, {
-        method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
-      });
-
-      if (!response.ok) {
-        await handleError(response);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar solicitud ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Contar solicitudes activas de un usuario
-   */
-  async contarActivas(usuarioId: number): Promise<number> {
-    try {
-      const response = await fetch(`${BASE_URL}/solicitudes/usuario/${usuarioId}/count-activas`, {
-        method: 'GET',
-        headers: API_CONFIG.HEADERS,
-      });
-
-      if (!response.ok) {
-        await handleError(response);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`Error al contar solicitudes activas del usuario ${usuarioId}:`, error);
       throw error;
     }
   },
@@ -291,9 +250,9 @@ export const registroService = {
   /**
    * Obtener registros de una solicitud
    */
-  async obtenerPorSolicitud(solicitudId: number, includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
+  async obtenerPorSolicitud(solicitudId: number, _includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/registros/solicitud/${solicitudId}?includeDetails=${includeDetails}`;
+      const url = `${BASE_URL}/registros/solicitud/${solicitudId}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS,
@@ -306,28 +265,6 @@ export const registroService = {
       return await response.json();
     } catch (error) {
       console.error(`Error al obtener registros de la solicitud ${solicitudId}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Actualizar registro
-   */
-  async actualizar(id: number, registro: Partial<RegistroArriendoDTO>): Promise<RegistroArriendoDTO> {
-    try {
-      const response = await fetch(`${BASE_URL}/registros/${id}`, {
-        method: 'PUT',
-        headers: API_CONFIG.HEADERS,
-        body: JSON.stringify(registro),
-      });
-
-      if (!response.ok) {
-        await handleError(response);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`Error al actualizar registro ${id}:`, error);
       throw error;
     }
   },
@@ -349,25 +286,6 @@ export const registroService = {
       return await response.json();
     } catch (error) {
       console.error(`Error al finalizar registro ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Eliminar registro
-   */
-  async eliminar(id: number): Promise<void> {
-    try {
-      const response = await fetch(`${BASE_URL}/registros/${id}`, {
-        method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
-      });
-
-      if (!response.ok) {
-        await handleError(response);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar registro ${id}:`, error);
       throw error;
     }
   },

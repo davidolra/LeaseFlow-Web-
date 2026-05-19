@@ -161,9 +161,14 @@ export const propiedadService = {
       
       if (filtros.tipoId) params.append('tipoId', filtros.tipoId.toString());
       if (filtros.comunaId) params.append('comunaId', filtros.comunaId.toString());
-      if (filtros.precioMin) params.append('precioMin', filtros.precioMin.toString());
-      if (filtros.precioMax) params.append('precioMax', filtros.precioMax.toString());
-      if (filtros.nHabitMin) params.append('nHabitMin', filtros.nHabitMin.toString());
+      const minPrecio = filtros.minPrecio ?? filtros.precioMin;
+      const maxPrecio = filtros.maxPrecio ?? filtros.precioMax;
+      const nHabit = filtros.nHabit ?? filtros.nHabitMin;
+
+      if (minPrecio !== undefined) params.append('minPrecio', minPrecio.toString());
+      if (maxPrecio !== undefined) params.append('maxPrecio', maxPrecio.toString());
+      if (nHabit !== undefined) params.append('nHabit', nHabit.toString());
+      if (filtros.nBanos !== undefined) params.append('nBanos', filtros.nBanos.toString());
       if (filtros.petFriendly !== undefined) params.append('petFriendly', filtros.petFriendly.toString());
       if (filtros.includeDetails !== undefined) params.append('includeDetails', filtros.includeDetails.toString());
 

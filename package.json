@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:ui": "vitest"
+    "test:ui": "vitest",
+    "smoke:api": "node --input-type=module -e \"const base=process.env.BASE_URL||'http://localhost:5173'; const paths=[['users:list','/userservice/api/usuarios?includeDetails=false'],['props:list','/propertyservice/api/propiedades?includeDetails=false'],['docs:list','/documentservice/api/documentos?includeDetails=false'],['apps:list','/applicationservice/api/solicitudes?includeDetails=false'],['contact:list','/contactservice/api/contacto?includeDetails=false'],['reviews:list','/reviewservice/api/reviews?includeDetails=false'],['tipo-resenas:list','/reviewservice/api/tipo-resenas']]; let failed=false; for (const [name,p] of paths){ const url=base+p; try{ const r=await fetch(url,{headers:{accept:'application/json'}}); const txt=await r.text(); if(!r.ok){ failed=true; console.error(`ERR [${name}] ${r.status} url=${url}`); } else { console.log(`OK  [${name}] ${r.status} len=${txt.length} url=${url}`); } } catch(e){ failed=true; console.error(`ERR [${name}] ${e?.message||e} url=${url}`); } } process.exit(failed?1:0);\""
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

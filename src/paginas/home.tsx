@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 
 
 const Home: React.FC = () => { 
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const featuredCtaTo = isLoggedIn ? "/arrienda" : "/login";
+
   const featured = useMemo(
     () => [
       {
@@ -102,17 +105,39 @@ const Home: React.FC = () => {
     const el = rightStackRef.current;
     if (!el) return;
 
-    const update = () => setRightStackHeight(el.getBoundingClientRect().height);
-    update();
+    let raf = 0;
+
+    const measure = () => {
+      const next = Math.round(el.getBoundingClientRect().height);
+      setRightStackHeight((prev) => {
+        if (prev === null) return next;
+        if (prev === next) return prev;
+        if (Math.abs(prev - next) <= 1) return prev;
+        return next;
+      });
+    };
+
+    const schedule = () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(measure);
+    };
+
+    schedule();
 
     if (typeof ResizeObserver !== "undefined") {
-      const ro = new ResizeObserver(() => update());
+      const ro = new ResizeObserver(() => schedule());
       ro.observe(el);
-      return () => ro.disconnect();
+      return () => {
+        ro.disconnect();
+        if (raf) window.cancelAnimationFrame(raf);
+      };
     }
 
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("resize", schedule);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
@@ -137,7 +162,7 @@ const Home: React.FC = () => {
                     <div className="lf-featured-meta">{p.comuna}</div>
                     <div className="lf-featured-text">{p.descripcion}</div>
                     <div className="mt-2 d-grid">
-                      <Link to="/login" className="btn btn-primary btn-sm">
+                      <Link to={featuredCtaTo} className="btn btn-primary btn-sm">
                         Ver Más
                       </Link>
                     </div>

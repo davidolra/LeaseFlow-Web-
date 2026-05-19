@@ -191,7 +191,7 @@ const Perfil: React.FC = () => {
   }
 
   return (
-    <div className="container my-5">
+    <div className="container my-5 lf-profile">
       <div className="row justify-content-center">
         <div className="col-lg-8">
           {/* Header del perfil */}

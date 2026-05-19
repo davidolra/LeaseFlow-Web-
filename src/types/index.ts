@@ -242,11 +242,15 @@ export interface RegistroFilters {
 export interface PropiedadFilters {
   tipoId?: number;
   comunaId?: number;
+  minPrecio?: number;
+  maxPrecio?: number;
+  nHabit?: number;
+  nBanos?: number;
+  petFriendly?: boolean;
+  includeDetails?: boolean;
   precioMin?: number;
   precioMax?: number;
   nHabitMin?: number;
-  petFriendly?: boolean;
-  includeDetails?: boolean;
 }
 
 export interface DocumentoFilters {

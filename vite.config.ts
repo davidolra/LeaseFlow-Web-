@@ -21,4 +21,39 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
   },
+
+  server: {
+    proxy: {
+      '/userservice/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/userservice/, ''),
+      },
+      '/propertyservice/api': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/propertyservice/, ''),
+      },
+      '/documentservice/api': {
+        target: 'http://localhost:8083',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/documentservice/, ''),
+      },
+      '/applicationservice/api': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/applicationservice/, ''),
+      },
+      '/contactservice/api': {
+        target: 'http://localhost:8085',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/contactservice/, ''),
+      },
+      '/reviewservice/api': {
+        target: 'http://localhost:8086',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/reviewservice/, ''),
+      },
+    },
+  },
 });

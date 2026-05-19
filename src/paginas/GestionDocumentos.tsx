@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ROLES } from "../config/apiConfig"; 
@@ -19,18 +19,23 @@ const ESTADO_RECHAZADO = 3;
 
 // DECLARACIÓN DE COMPONENTE (Sin React.FC)
 const GestionDocumentos = () => {
-    const navigate = useNavigate();
+    const _navigate = useNavigate();
     
     const userRole = localStorage.getItem("userRole") || "";
     const revisadoPorId = localStorage.getItem("userId"); // ID del Admin
+    const normalizedRole = userRole.toUpperCase();
     
     // Estados principales
     const [documentos, setDocumentos] = useState<DocumentoDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [notificacion, setNotificacion] = useState<{ variant: 'success' | 'danger'; message: string } | null>(null);
 
     // Estado para filtros (solo mostraremos PENDIENTES por defecto)
-    const filters: DocumentoFilters = { estadoId: ESTADO_PENDIENTE, includeDetails: true };
+    const filters: DocumentoFilters = useMemo(
+        () => ({ estadoId: ESTADO_PENDIENTE, includeDetails: true }),
+        []
+    );
 
     // Estado para Modales y Acciones
     const [showModal, setShowModal] = useState(false);
@@ -38,12 +43,22 @@ const GestionDocumentos = () => {
     const [observaciones, setObservaciones] = useState("");
     const [accion, setAccion] = useState<'aprobar' | 'rechazar' | null>(null);
 
+    const notify = useCallback((variant: 'success' | 'danger', message: string) => {
+        setNotificacion({ variant, message });
+    }, []);
+
+    useEffect(() => {
+        if (!notificacion) return;
+        const id = window.setTimeout(() => setNotificacion(null), 2600);
+        return () => window.clearTimeout(id);
+    }, [notificacion]);
+
 
     // ----------------------------------------------------------------------
     // FUNCIÓN DE CARGA DE DATOS
     // ----------------------------------------------------------------------
-    const fetchDocumentos = async () => {
-        if (userRole !== ROLES.ADMIN) {
+    const fetchDocumentos = useCallback(async () => {
+        if (normalizedRole !== ROLES.ADMIN) {
             setIsLoading(false);
             return;
         }
@@ -52,7 +67,7 @@ const GestionDocumentos = () => {
         setError(null);
 
         try {
-            let fetchedData: DocumentoDTO[] = await documentoService.listar(true);
+            let fetchedData: DocumentoDTO[] = await documentoService.listar(Boolean(filters.includeDetails));
             
             if (filters.estadoId) {
                 fetchedData = fetchedData.filter(d => d.estadoId === filters.estadoId);
@@ -62,11 +77,13 @@ const GestionDocumentos = () => {
 
         } catch (err: unknown) { // Usamos 'unknown' en lugar de 'any'
             console.error("Error al cargar documentos:", err);
-            setError("Error al cargar documentos. Verifica que el Document Service (8083) esté activo.");
+            const message = "Error al cargar documentos. Verifica que el Document Service (8083) esté activo.";
+            setError(message);
+            notify('danger', message);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [filters.estadoId, filters.includeDetails, normalizedRole, notify]);
 
 
     // ----------------------------------------------------------------------
@@ -74,8 +91,8 @@ const GestionDocumentos = () => {
     // ----------------------------------------------------------------------
 
     const iniciarAccion = (documento: DocumentoDTO, action: 'aprobar' | 'rechazar') => {
-        if (userRole !== ROLES.ADMIN) {
-            alert("No tienes permisos para realizar esta acción.");
+        if (normalizedRole !== ROLES.ADMIN) {
+            notify('danger', "No tienes permisos para realizar esta acción.");
             return;
         }
         setDocumentoSeleccionado(documento);
@@ -92,20 +109,25 @@ const GestionDocumentos = () => {
 
         // Validar si es rechazo y faltan observaciones
         if (accion === 'rechazar' && (!observaciones || observaciones.trim().length < 5)) {
-            alert("Las observaciones de rechazo son obligatorias y deben ser más detalladas.");
+            notify('danger', "Las observaciones de rechazo son obligatorias y deben ser más detalladas.");
             return;
         }
 
         try {
             await documentoService.actualizarEstado(documentoSeleccionado.id, nuevoEstadoId);
-            
-            alert(`Documento ${documentoSeleccionado.nombre} ${accion === 'aprobar' ? 'APROBADO' : 'RECHAZADO'} exitosamente.`);
+            notify(
+                accion === 'aprobar' ? 'success' : 'danger',
+                `Documento ${documentoSeleccionado.nombre} ${accion === 'aprobar' ? 'APROBADO' : 'RECHAZADO'} exitosamente.`
+            );
             
             setShowModal(false);
             fetchDocumentos(); 
 
         } catch (err: unknown) { // Usamos 'unknown' en lugar de 'any'
-            alert(`Error al ${accion} el documento: ${err instanceof Error ? err.message : 'Error de conexión'}`);
+            notify(
+                'danger',
+                `Error al ${accion} el documento: ${err instanceof Error ? err.message : 'Error de conexión'}`
+            );
             console.error(`Error al actualizar estado:`, err);
         }
     };
@@ -114,13 +136,13 @@ const GestionDocumentos = () => {
     // EFECTO DE MONTAJE
     // ----------------------------------------------------------------------
     useEffect(() => {
-        if (userRole !== ROLES.ADMIN) {
-            alert("Acceso denegado. Solo Administradores.");
-            navigate("/");
+        if (normalizedRole !== ROLES.ADMIN) {
+            notify('danger', "Acceso denegado. Solo Administradores.");
+            setIsLoading(false);
             return;
         }
         fetchDocumentos();
-    }, [userRole, navigate, filters]); 
+    }, [fetchDocumentos, normalizedRole, notify]); 
 
 
     // ----------------------------------------------------------------------
@@ -129,12 +151,19 @@ const GestionDocumentos = () => {
 
     const documentosPendientes = documentos.filter(d => d.estadoId === ESTADO_PENDIENTE);
 
-    if (userRole !== ROLES.ADMIN) {
+    if (normalizedRole !== ROLES.ADMIN) {
         return <div className="container my-5 alert alert-danger">Acceso denegado.</div>;
     }
 
     return (
         <div className="container my-5">
+            {notificacion && (
+                <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
+                    <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
+                        {notificacion.message}
+                    </div>
+                </div>
+            )}
             <h1 className="fw-bold">Gestión de Documentos ({documentosPendientes.length} Pendientes)</h1>
             <p className="text-muted">Revisa y gestiona los documentos de los usuarios para aprobar o rechazar su elegibilidad.</p>
             

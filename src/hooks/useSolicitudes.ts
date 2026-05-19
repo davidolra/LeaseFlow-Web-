@@ -163,9 +163,8 @@ export const useSolicitudes = () => {
     setLoading(true);
     setError(null);
     try {
-      await solicitudService.eliminar(id);
+      await solicitudService.actualizarEstado(id, 'RECHAZADA');
       setSolicitud(null);
-      // Remover de la lista si está presente
       setSolicitudes(prev => prev.filter(s => s.id !== id));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al eliminar solicitud';
@@ -183,7 +182,8 @@ export const useSolicitudes = () => {
     setLoading(true);
     setError(null);
     try {
-      const cantidad = await solicitudService.contarActivas(usuarioId);
+      const solicitudesUsuario = await solicitudService.obtenerPorUsuario(usuarioId, false);
+      const cantidad = solicitudesUsuario.filter(s => s.estado === 'PENDIENTE').length;
       setSolicitudesActivas(cantidad);
       return cantidad;
     } catch (err) {
