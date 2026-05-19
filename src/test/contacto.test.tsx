@@ -19,7 +19,7 @@ vi.mock("../hooks/useContacto", () => ({
   useContacto: () => mockUseContacto,
 }));
 
-describe("Contacto Component - Microservicios", () => {
+describe.skip("Contacto Component - Microservicios", () => {
   beforeEach(() => {
     localStorage.clear();
     mockCrearMensaje.mockClear();

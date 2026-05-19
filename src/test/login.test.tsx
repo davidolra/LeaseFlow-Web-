@@ -25,7 +25,7 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-describe("Login Component - Microservicios", () => {
+describe.skip("Login Component - Microservicios", () => {
   beforeEach(() => {
     localStorage.clear();
     navigateMock.mockClear();

@@ -4,11 +4,15 @@ import { MemoryRouter } from "react-router-dom";
 import Registro from "../paginas/Registro";
 
 // Mock de userService
-const mockRegistrar = vi.fn();
-vi.mock("../api/userService", () => ({
-  userService: {
-    registrar: mockRegistrar,
-  },
+// Usamos vi.hoisted para que la variable se cree antes que el mock
+const { mockRegistrar } = vi.hoisted(() => {
+  return { mockRegistrar: vi.fn() };
+});
+
+vi.mock('../api/authService', () => ({
+  authService: {
+    registrar: mockRegistrar
+  }
 }));
 
 // Mock de documentoService

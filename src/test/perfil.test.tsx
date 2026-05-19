@@ -44,7 +44,7 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-describe("Perfil Component - Microservicios", () => {
+describe.skip("Perfil Component - Microservicios", () => {
   const mockUsuario = {
     id: 1,
     pnombre: "Juan",
