@@ -15,13 +15,12 @@ const DEV_PROXY_BASES = {
 } as const;
 
 export const API_CONFIG = {
-  // URL base de los microservicios
-  APPLICATION_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.APPLICATION_SERVICE : 'http://localhost:8084/api',
-  USER_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.USER_SERVICE : 'http://localhost:8081/api',
-  PROPERTY_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.PROPERTY_SERVICE : 'http://localhost:8082/api',
-  DOCUMENT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.DOCUMENT_SERVICE : 'http://localhost:8083/api',
-  CONTACT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.CONTACT_SERVICE : 'http://localhost:8085/api',
-  REVIEW_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.REVIEW_SERVICE : 'http://localhost:8086/api',
+  APPLICATION_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.APPLICATION_SERVICE : 'https://applicationservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
+  USER_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.USER_SERVICE : 'https://userservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
+  PROPERTY_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.PROPERTY_SERVICE : 'https://propertyservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
+  DOCUMENT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.DOCUMENT_SERVICE : 'https://documentservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
+  CONTACT_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.CONTACT_SERVICE : 'https://contactservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
+  REVIEW_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.REVIEW_SERVICE : 'https://reviewservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
   
   // Timeouts (en milisegundos)
   TIMEOUT: 10000, // 10 segundos
