@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { ROLES } from "../config/apiConfig"; 
 
@@ -19,7 +18,6 @@ const ESTADO_RECHAZADO = 3;
 
 // DECLARACIÓN DE COMPONENTE (Sin React.FC)
 const GestionDocumentos = () => {
-    const _navigate = useNavigate();
     
     const userRole = localStorage.getItem("userRole") || "";
     const revisadoPorId = localStorage.getItem("userId"); // ID del Admin
