@@ -153,8 +153,13 @@ const fetchPropiedades = async () => {
     setModoEdicion(false);
     // Reinicia el estado con valores por defecto y código único
     setPropiedadActual({
-      ...INITIAL_PROPIEDAD_STATE,
-      codigo: 'P-' + Math.random().toString(36).substring(2, 8).toUpperCase(), 
+      ...INITIAL_PROPIEDAD_STATE,
+      codigo: 'P-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      propietarioId: userId ? Number(userId) : 0,
+      propietarioEmail: userEmail,
+      tipoId: tipos.length > 0 ? tipos[0].id : 0, 
+      comunaId: comunas.length > 0 ? comunas[0].id : 0, 
+    });
     setShowModal(true);
   };
 
@@ -208,24 +213,26 @@ const fetchPropiedades = async () => {
       return;
     }
    
-    // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
-    const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
-
+   // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
+    const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
         codigo: propiedadActual.codigo || 'W-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-        precioMensual: propiedadActual.precioMensual,
-        
-        // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
-        divisa: propiedadActual.divisa,
-        m2: propiedadActual.m2,          
-        nHabit: propiedadActual.nHabit,   
-        nBanos: propiedadActual.nBanos,   
-        petFriendly: propiedadActual.petFriendly,
-        tipoId: propiedadActual.tipoId,    
-        comunaId: propiedadActual.comunaId,  
-        
-        // Campo extra para el Backend
-        propietarioId: Number(userId), 
-    };
+        titulo: propiedadActual.titulo,               // 🚨 Lo recuperamos
+        descripcion: propiedadActual.descripcion || '', // 🚨 Lo recuperamos
+        direccion: propiedadActual.direccion,         // 🚨 Lo recuperamos
+        precioMensual: propiedadActual.precioMensual,
+        
+        // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
+        divisa: propiedadActual.divisa,
+        m2: propiedadActual.m2,          
+        nHabit: propiedadActual.nHabit,   
+        nBanos: propiedadActual.nBanos,   
+        petFriendly: propiedadActual.petFriendly,
+        tipoId: propiedadActual.tipoId,    
+        comunaId: propiedadActual.comunaId,  
+        
+        // Campo extra para el Backend
+        propietarioId: Number(userId), 
+    };
 
     try {
       let message: string;
