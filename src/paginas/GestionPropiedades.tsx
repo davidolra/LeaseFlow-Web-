@@ -154,12 +154,7 @@ const fetchPropiedades = async () => {
     // Reinicia el estado con valores por defecto y código único
     setPropiedadActual({
       ...INITIAL_PROPIEDAD_STATE,
-      codigo: 'AUTO-' + Date.now(), 
-      propietarioId: userId ? Number(userId) : 0, 
-      propietarioEmail: userEmail,
-      tipoId: tipos.length > 0 ? tipos[0].id : 0, // Setea el primer tipo disponible si existe
-      comunaId: comunas.length > 0 ? comunas[0].id : 0, // Setea la primera comuna disponible si existe
-    });
+      codigo: 'P-' + Math.random().toString(36).substring(2, 8).toUpperCase(), 
     setShowModal(true);
   };
 
@@ -216,10 +211,7 @@ const fetchPropiedades = async () => {
     // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
     const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
 
-        codigo: propiedadActual.codigo || 'WEB-' + Date.now(),
-        titulo: propiedadActual.titulo,
-        descripcion: propiedadActual.descripcion || '',
-        direccion: propiedadActual.direccion,
+        codigo: propiedadActual.codigo || 'W-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
         precioMensual: propiedadActual.precioMensual,
         
         // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
