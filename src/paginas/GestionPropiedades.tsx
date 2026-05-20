@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 
-import { propiedadService, comunaService, tipoService } from "../api"; 
+import { propiedadService, comunaService, tipoService, regionService } from "../api"; 
 import { ROLES } from "../config/apiConfig"; 
-import type { PropiedadDTO, CrearPropiedadRequest, ComunaDTO, TipoPropiedadDTO } from "../types";
+import type { PropiedadDTO, CrearPropiedadRequest, ComunaDTO, TipoPropiedadDTO, RegionDTO } from "../types";
 
 
 interface Propiedad {
@@ -24,9 +24,12 @@ interface Propiedad {
   propietarioId: number; 
   propietarioEmail: string;
   imagen: string; 
+  estadoPropiedad?: 'ACTIVA' | 'INACTIVA' | 'EN_REVISION' | 'ARRENDADA';
 }
 
-const GestionPropiedades: React.FC = () => {
+type GestionPropiedadesScope = 'AUTO' | 'MINE' | 'ALL';
+
+const GestionPropiedades: React.FC<{ scope?: GestionPropiedadesScope }> = ({ scope = 'AUTO' }) => {
   const navigate = useNavigate();
   
   // Lectura del usuario y rol desde localStorage
@@ -63,8 +66,14 @@ const GestionPropiedades: React.FC = () => {
   };
 
   const [propiedadActual, setPropiedadActual] = useState<Propiedad>(INITIAL_PROPIEDAD_STATE);
+  const [regionId, setRegionId] = useState<number>(0);
   const [comunas, setComunas] = useState<ComunaDTO[]>([]);
+  const [regiones, setRegiones] = useState<RegionDTO[]>([]);
   const [tipos, setTipos] = useState<TipoPropiedadDTO[]>([]);
+  const comunasFiltradas = useMemo(() => {
+    if (!regionId) return comunas;
+    return comunas.filter((c) => c.regionId === regionId);
+  }, [comunas, regionId]);
 
   // ----------------------------------------------------------------------
   // FUNCIÓN CRÍTICA: CARGA DE DATOS DESDE EL BACKEND
@@ -81,17 +90,22 @@ const fetchPropiedades = async () => {
     try {
         let fetchedData: PropiedadDTO[] = [];
 
-        if (userRole === ROLES.ADMIN) {
-            fetchedData = await propiedadService.listar(true); 
-        } else if (userRole === ROLES.PROPIETARIO) {
-            fetchedData = await propiedadService.listarPorPropietario(Number(userId), true);
-        }
+        if (scope === 'ALL') {
+            fetchedData = await propiedadService.listar(true);
+        } else if (scope === 'MINE') {
+            fetchedData = await propiedadService.listarPorPropietario(Number(userId), true);
+        } else if (userRole === ROLES.ADMIN) {
+            fetchedData = await propiedadService.listar(true);
+        } else if (userRole === ROLES.PROPIETARIO) {
+            fetchedData = await propiedadService.listarPorPropietario(Number(userId), true);
+        }
 
         const propiedadesConImagen: Propiedad[] = fetchedData.map(dto => ({
             ...dto,
             imagen: dto.fotos && dto.fotos.length > 0 
                     ? dto.fotos[0].url 
                     : '',
+            estadoPropiedad: dto.estadoPropiedad,
             
             // Mapeamos los campos que cambiaron de nombre:
             titulo: dto.titulo,
@@ -114,10 +128,12 @@ const fetchPropiedades = async () => {
    */
   const fetchListasMaestras = async () => {
     try {
-        const [comunasData, tiposData] = await Promise.all([
+        const [regionesData, comunasData, tiposData] = await Promise.all([
+            regionService.listar(),
             comunaService.listar(),
             tipoService.listar()
         ]);
+        setRegiones(regionesData);
         setComunas(comunasData);
         setTipos(tiposData);
     } catch (err) {
@@ -142,7 +158,7 @@ const fetchPropiedades = async () => {
     if (userId && (userRole === ROLES.PROPIETARIO || userRole === ROLES.ADMIN)) {
       fetchPropiedades();
     }
-  }, [userRole, userId, navigate]); 
+  }, [userRole, userId, navigate, scope]); 
   
   
   // ----------------------------------------------------------------------
@@ -160,6 +176,7 @@ const fetchPropiedades = async () => {
       tipoId: tipos.length > 0 ? tipos[0].id : 0, // Setea el primer tipo disponible si existe
       comunaId: comunas.length > 0 ? comunas[0].id : 0, // Setea la primera comuna disponible si existe
     });
+    setRegionId(regiones.length > 0 ? regiones[0].id : 0);
     setShowModal(true);
   };
 
@@ -170,6 +187,8 @@ const fetchPropiedades = async () => {
     }
     setModoEdicion(true);
     setPropiedadActual(propiedad);
+    const comuna = comunas.find(c => c.id === propiedad.comunaId);
+    setRegionId(comuna?.regionId || 0);
     setShowModal(true);
   };
 
@@ -317,14 +336,40 @@ const fetchPropiedades = async () => {
             {propiedades.map((propiedad) => (
               <div className="col-md-6 col-lg-4" key={propiedad.id}>
                 <div className="card shadow-sm h-100">
-                  <div
-                    className="d-flex align-items-center justify-content-center bg-light text-muted"
-                    style={{ height: "200px" }}
-                  >
-                    Sin imagen
-                  </div>
+                  {propiedad.imagen ? (
+                    <img
+                      src={propiedad.imagen}
+                      alt={propiedad.titulo}
+                      style={{ height: "200px", objectFit: "cover", width: "100%" }}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div
+                      className="d-flex align-items-center justify-content-center bg-light text-muted"
+                      style={{ height: "200px" }}
+                    >
+                      Sin imagen
+                    </div>
+                  )}
                     <div className="card-body d-flex flex-column">
                       <h5 className="card-title">{propiedad.titulo}</h5>
+                      {propiedad.estadoPropiedad ? (
+                        <div className="mb-2">
+                          <span
+                            className={`badge ${
+                              propiedad.estadoPropiedad === "ARRENDADA"
+                                ? "bg-warning text-dark"
+                                : propiedad.estadoPropiedad === "ACTIVA"
+                                  ? "bg-success"
+                                  : propiedad.estadoPropiedad === "EN_REVISION"
+                                    ? "bg-info text-dark"
+                                    : "bg-secondary"
+                            }`}
+                          >
+                            {propiedad.estadoPropiedad}
+                          </span>
+                        </div>
+                      ) : null}
                       <p className="card-text text-muted small">{propiedad.descripcion}</p>
                       <p className="fw-bold text-success">
                         ${propiedad.precioMensual.toLocaleString('es-CL')} {propiedad.divisa}
@@ -426,14 +471,19 @@ const fetchPropiedades = async () => {
                     <input
                       type="number"
                       className="form-control"
-                      value={propiedadActual.precioMensual}
-                      onChange={(e) => setPropiedadActual({ ...propiedadActual, precioMensual: Number(e.target.value) })}
+                    value={propiedadActual.precioMensual === 0 ? "" : propiedadActual.precioMensual}
+                    onChange={(e) =>
+                        setPropiedadActual({
+                          ...propiedadActual,
+                          precioMensual: e.target.value === "" ? 0 : Number(e.target.value),
+                        })
+                      }
                       min="0"
                       required
                     />
                   </div>
                   
-                  {/* 🚨 Fila de SELECTS: TIPO DE PROPIEDAD y COMUNA 🚨 */}
+                  {/* SELECTS: TIPO DE PROPIEDAD y REGIÓN */}
                   <div className="row mb-3">
                     <div className="col-md-6">
                       <label className="form-label fw-bold">Tipo de Propiedad *</label>
@@ -453,23 +503,50 @@ const fetchPropiedades = async () => {
                       {tipos.length === 0 && <small className="text-danger">Cargando tipos...</small>}
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label fw-bold">Comuna *</label>
-                      <select 
+                      <label className="form-label fw-bold">Región *</label>
+                      <select
                         className="form-select"
-                        value={propiedadActual.comunaId}
-                        onChange={(e) => setPropiedadActual({ ...propiedadActual, comunaId: Number(e.target.value) })}
+                        value={regionId}
+                        onChange={(e) => {
+                          const nextRegionId = Number(e.target.value);
+                          setRegionId(nextRegionId);
+                          const first = comunas.find(c => c.regionId === nextRegionId);
+                          if (first) {
+                            setPropiedadActual({ ...propiedadActual, comunaId: first.id });
+                          }
+                        }}
                         required
                       >
-                        <option value={0} disabled>Seleccione una comuna</option>
-                        {comunas.map((comuna) => (
-                          <option key={comuna.id} value={comuna.id}>
-                            {comuna.nombre}
+                        <option value={0} disabled>Seleccione una región</option>
+                        {regiones.map((region) => (
+                          <option key={region.id} value={region.id}>
+                            {region.nombre}
                           </option>
                         ))}
                       </select>
-                      {comunas.length === 0 && <small className="text-danger">Cargando comunas...</small>}
+                      {regiones.length === 0 && <small className="text-danger">Cargando regiones...</small>}
                     </div>
                   </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Comuna *</label>
+                    <select
+                      className="form-select"
+                      value={propiedadActual.comunaId}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, comunaId: Number(e.target.value) })}
+                      required
+                    >
+                      <option value={0} disabled>Seleccione una comuna</option>
+                      {comunasFiltradas.map((comuna) => (
+                        <option key={comuna.id} value={comuna.id}>
+                          {comuna.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {comunasFiltradas.length === 0 && (
+                      <small className="text-danger">Seleccione una región para ver comunas</small>
+                    )}
+                  </div>
                   
                   <div className="row mb-3">
                     <div className="col-md-4">
@@ -477,8 +554,13 @@ const fetchPropiedades = async () => {
                       <input
                         type="number"
                         className="form-control"
-                        value={propiedadActual.m2}
-                        onChange={(e) => setPropiedadActual({ ...propiedadActual, m2: Number(e.target.value) })}
+                      value={propiedadActual.m2 === 0 ? "" : propiedadActual.m2}
+                      onChange={(e) =>
+                          setPropiedadActual({
+                            ...propiedadActual,
+                            m2: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
                         min="1"
                         required
                       />
@@ -488,8 +570,13 @@ const fetchPropiedades = async () => {
                       <input
                         type="number"
                         className="form-control"
-                        value={propiedadActual.nHabit}
-                        onChange={(e) => setPropiedadActual({ ...propiedadActual, nHabit: Number(e.target.value) })}
+                      value={propiedadActual.nHabit === 0 ? "" : propiedadActual.nHabit}
+                      onChange={(e) =>
+                          setPropiedadActual({
+                            ...propiedadActual,
+                            nHabit: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
                         min="0"
                         required
                       />
@@ -499,8 +586,13 @@ const fetchPropiedades = async () => {
                       <input
                         type="number"
                         className="form-control"
-                        value={propiedadActual.nBanos}
-                        onChange={(e) => setPropiedadActual({ ...propiedadActual, nBanos: Number(e.target.value) })}
+                      value={propiedadActual.nBanos === 0 ? "" : propiedadActual.nBanos}
+                      onChange={(e) =>
+                          setPropiedadActual({
+                            ...propiedadActual,
+                            nBanos: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
                         min="0"
                         required
                       />

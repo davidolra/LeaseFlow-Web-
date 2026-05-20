@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../api/userService";
 import { documentoService } from "../api/documentService";
@@ -15,7 +15,10 @@ interface DocumentoArchivo {
   requerido: boolean;
 }
 
-const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSuccess }) => {
+type RegistroMode = "register" | "upload";
+
+const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }> = ({ onRegisterSuccess, mode = "register" }) => {
+  const isUploadOnly = mode === "upload";
   // Estados para datos personales
   const [pnombre, setPnombre] = useState("");
   const [snombre, setSnombre] = useState("");
@@ -41,13 +44,19 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
 
   // Estados para UI
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1); // 1: Datos personales, 2: Documentos
+  const [currentStep, setCurrentStep] = useState(isUploadOnly ? 2 : 1); // 1: Datos personales, 2: Documentos
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const navigate = useNavigate();
 
+  const currentUserId = useMemo(() => {
+    const id = localStorage.getItem("userId");
+    return id ? Number(id) : null;
+  }, []);
+
   // Validación del paso 1 (datos personales)
   const validateStep1 = (): boolean => {
+    if (isUploadOnly) return true;
     const newErrors: Record<string, string> = {};
 
     if (!pnombre.trim()) {
@@ -165,6 +174,32 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
     setLoading(true);
     
     try {
+      if (isUploadOnly) {
+        if (localStorage.getItem("isLoggedIn") !== "true" || !currentUserId) {
+          alert("Debes iniciar sesión para subir documentos.");
+          navigate("/login");
+          return;
+        }
+
+        const documentosSubidos = [];
+        for (const [, doc] of Object.entries(documentos)) {
+          if (doc.archivo) {
+            const documentoRequest: CrearDocumentoRequest = {
+              nombre: doc.archivo.name,
+              usuarioId: currentUserId,
+              estadoId: 1,
+              tipoDocId: doc.tipoDocId,
+            };
+            const documentoCreado = await documentoService.crear(documentoRequest);
+            documentosSubidos.push(documentoCreado);
+          }
+        }
+
+        alert("Documentos enviados a revisión.");
+        navigate("/perfil");
+        return;
+      }
+
       // 1. Determinar si es DuocUC
       const isDuocVip = email.toLowerCase().endsWith("@duocuc.cl");
       
@@ -225,7 +260,7 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
       );
 
       // 7. Avisar a App que el usuario está logueado
-      onRegisterSuccess();
+      onRegisterSuccess?.();
 
       // 8. Redirigir al perfil
       navigate("/");
@@ -243,10 +278,11 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
     <div className="main-content d-flex justify-content-center align-items-center py-5" style={{ minHeight: "100vh" }}>
       <div className="contact-form-container p-4 rounded shadow-lg" style={{ width: "100%", maxWidth: currentStep === 1 ? "600px" : "800px" }}>
         <h2 className="text-center mb-4 text-primary">
-          {currentStep === 1 ? "Crear cuenta - Paso 1/2" : "Crear cuenta - Paso 2/2"}
+          {isUploadOnly ? "Subir documentos" : (currentStep === 1 ? "Crear cuenta - Paso 1/2" : "Crear cuenta - Paso 2/2")}
         </h2>
 
         {/* Indicador de progreso */}
+        {!isUploadOnly && (
         <div className="progress mb-4" style={{ height: "5px" }}>
           <div 
             className="progress-bar" 
@@ -257,6 +293,7 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
             aria-valuemax={2}
           ></div>
         </div>
+        )}
 
         {/* PASO 1: DATOS PERSONALES */}
         {currentStep === 1 && (
@@ -480,20 +517,22 @@ const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSucce
             </div>
 
             <div className="d-flex gap-2 mt-4">
-              <button 
-                type="button" 
-                className="btn btn-outline-secondary flex-fill"
-                onClick={handlePreviousStep}
-                disabled={loading}
-              >
-                ← Volver
-              </button>
+              {!isUploadOnly && (
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary flex-fill"
+                  onClick={handlePreviousStep}
+                  disabled={loading}
+                >
+                  ← Volver
+                </button>
+              )}
               <button 
                 type="submit" 
                 className="btn btn-primary flex-fill"
                 disabled={loading}
               >
-                {loading ? "Registrando..." : "Completar Registro"}
+                {loading ? (isUploadOnly ? "Enviando..." : "Registrando...") : (isUploadOnly ? "Enviar documentos" : "Completar Registro")}
               </button>
             </div>
           </form>

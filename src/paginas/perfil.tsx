@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsuarios } from "../hooks/useUsuarios";
 import { useDocumentos } from "../hooks/useDocumentos";
+import { userService } from "../api/userService";
 import type { UsuarioDTO, DocumentoDTO } from "../types";
 
 const Perfil: React.FC = () => {
@@ -14,6 +15,7 @@ const Perfil: React.FC = () => {
   const [usuario, setUsuario] = useState<UsuarioDTO | null>(null);
   const [documentos, setDocumentos] = useState<DocumentoDTO[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
+  const [notificacion, setNotificacion] = useState<{ variant: 'success' | 'danger'; message: string } | null>(null);
   
   // Estado para edición
   const [datosEditables, setDatosEditables] = useState({
@@ -81,6 +83,12 @@ const Perfil: React.FC = () => {
     cargarDatos();
   }, [navigate]);
 
+  useEffect(() => {
+    if (!notificacion) return;
+    const id = window.setTimeout(() => setNotificacion(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [notificacion]);
+
   const validarCampos = (): boolean => {
     const nuevosErrores: Record<string, string> = {};
 
@@ -105,25 +113,20 @@ const Perfil: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log("💾 Actualizando perfil:", datosEditables);
-      
-      // TODO: Implementar endpoint de actualización en User Service
-      // Por ahora simulamos la actualización
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Actualizar estado local
-      if (usuario) {
-        setUsuario({
-          ...usuario,
-          ...datosEditables
-        });
-      }
-      
+      if (!usuario) return;
+
+      const payload: UsuarioDTO = {
+        ...usuario,
+        ...datosEditables,
+      };
+
+      const usuarioActualizado = await userService.actualizar(usuario.id, payload);
+      setUsuario(usuarioActualizado);
       setModoEdicion(false);
-      alert("✅ Perfil actualizado exitosamente");
+      setNotificacion({ variant: 'success', message: "Perfil actualizado exitosamente." });
     } catch (error) {
       console.error("❌ Error al actualizar perfil:", error);
-      alert("❌ Error al actualizar el perfil");
+      setNotificacion({ variant: 'danger', message: "Error al actualizar el perfil." });
     } finally {
       setLoading(false);
     }
@@ -192,6 +195,13 @@ const Perfil: React.FC = () => {
 
   return (
     <div className="container my-5 lf-profile">
+      {notificacion && (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
+          <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
+            {notificacion.message}
+          </div>
+        </div>
+      )}
       <div className="row justify-content-center">
         <div className="col-lg-8">
           {/* Header del perfil */}
@@ -387,7 +397,7 @@ const Perfil: React.FC = () => {
               <h5 className="mb-0">📄 Mis Documentos</h5>
               <button 
                 className="btn btn-light btn-sm"
-                onClick={() => navigate("/registro")}
+                onClick={() => navigate("/subir-documentos")}
               >
                 ➕ Subir Documento
               </button>

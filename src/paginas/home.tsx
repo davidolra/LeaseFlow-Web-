@@ -1,37 +1,59 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Vistas from "./Vistas";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { propiedadService, tipoService } from "../api";
+import type { PropiedadDTO, TipoPropiedadDTO } from "../types";
 
 
 const Home: React.FC = () => { 
+  const navigate = useNavigate();
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const featuredCtaTo = isLoggedIn ? "/arrienda" : "/login";
 
-  const featured = useMemo(
-    () => [
-      {
-        titulo: "Departamento 2D/2B",
-        descripcion: "Cercano a metro, excelente conectividad y espacios iluminados.",
-        comuna: "Santiago",
-      },
-      {
-        titulo: "Casa 3D/2B",
-        descripcion: "Barrio tranquilo, patio y excelente acceso a locomoción.",
-        comuna: "Ñuñoa",
-      },
-      {
-        titulo: "Studio moderno",
-        descripcion: "Ideal para estudiantes, excelente ubicación y bajos gastos comunes.",
-        comuna: "Providencia",
-      },
-      {
-        titulo: "Departamento 1D/1B",
-        descripcion: "Sector caminable, cercano a servicios y transporte.",
-        comuna: "Las Condes",
-      },
-    ],
-    [],
-  );
+  const [tipos, setTipos] = useState<TipoPropiedadDTO[]>([]);
+  const [featuredProps, setFeaturedProps] = useState<PropiedadDTO[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
+
+  const [q, setQ] = useState("");
+  const [tipoId, setTipoId] = useState<number | "">("");
+  const [precioRange, setPrecioRange] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [tiposData] = await Promise.all([tipoService.listar()]);
+        if (!cancelled) setTipos(tiposData);
+      } catch {
+        if (!cancelled) setTipos([]);
+      }
+
+      try {
+        setFeaturedLoading(true);
+        const props = await propiedadService.listar(true);
+        if (!cancelled) setFeaturedProps(Array.isArray(props) ? props : []);
+      } catch {
+        if (!cancelled) setFeaturedProps([]);
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const featured = useMemo(() => {
+    return featuredProps.slice(0, 6).map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion || "Propiedad disponible para arriendo.",
+      comuna: p.comuna?.nombre || p.direccion,
+    }));
+  }, [featuredProps]);
 
   const featuredLoop = useMemo(() => [...featured, ...featured], [featured]);
 
@@ -155,21 +177,31 @@ const Home: React.FC = () => {
               <div className="lf-panel-kicker">Propiedades destacadas</div>
             </div>
             <div className="lf-featured-scroll mt-3" ref={featuredScrollRef}>
-              {featuredLoop.map((p, idx) => (
-                <div className="lf-featured-item" key={`${p.titulo}-${idx}`}>
-                  <div className="lf-featured-content">
-                    <div className="lf-featured-title">{p.titulo}</div>
-                    <div className="lf-featured-meta">{p.comuna}</div>
-                    <div className="lf-featured-text">{p.descripcion}</div>
-                    <div className="mt-2 d-grid">
-                      <Link to={featuredCtaTo} className="btn btn-primary btn-sm">
-                        Ver Más
-                      </Link>
-                    </div>
-                  </div>
-                  <div className="lf-featured-media" aria-hidden="true"></div>
+              {featuredLoading ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status" />
                 </div>
-              ))}
+              ) : featuredLoop.length === 0 ? (
+                <div className="alert alert-secondary mb-0">
+                  No hay propiedades destacadas disponibles.
+                </div>
+              ) : (
+                featuredLoop.map((p, idx) => (
+                  <div className="lf-featured-item" key={`${p.titulo}-${idx}`}>
+                    <div className="lf-featured-content">
+                      <div className="lf-featured-title">{p.titulo}</div>
+                      <div className="lf-featured-meta">{p.comuna}</div>
+                      <div className="lf-featured-text">{p.descripcion}</div>
+                      <div className="mt-2 d-grid">
+                        <Link to={featuredCtaTo} className="btn btn-primary btn-sm">
+                          Ver Más
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="lf-featured-media" aria-hidden="true"></div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -184,19 +216,49 @@ const Home: React.FC = () => {
                 className="d-grid gap-2 mt-2"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const params = new URLSearchParams();
+                  if (q.trim()) params.set("q", q.trim());
+                  if (tipoId !== "") params.set("tipoId", String(tipoId));
+                  if (precioRange) {
+                    const [min, max] = precioRange.split("-").map((x) => x.trim());
+                    if (min) params.set("minPrecio", min);
+                    if (max) params.set("maxPrecio", max);
+                  }
+                  navigate(`/arrienda${params.toString() ? `?${params.toString()}` : ""}`);
                 }}
               >
-                <input type="text" className="form-control" placeholder="Ubicación" aria-label="Ubicación" />
-                <select className="form-select" aria-label="Tipo de inmueble" defaultValue="">
-                  <option value="" disabled>Tipo de inmueble</option>
-                  <option value="departamento">Departamento</option>
-                  <option value="casa">Casa</option>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ubicación o palabra clave"
+                  aria-label="Ubicación o palabra clave"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+                <select
+                  className="form-select"
+                  aria-label="Tipo de inmueble"
+                  value={tipoId}
+                  onChange={(e) => setTipoId(e.target.value ? Number(e.target.value) : "")}
+                >
+                  <option value="">Tipo de inmueble</option>
+                  {tipos.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre}
+                    </option>
+                  ))}
                 </select>
-                <select className="form-select" aria-label="Rango de precio" defaultValue="">
-                  <option value="" disabled>Rango de precio</option>
-                  <option value="0-500">$0 - $500,000</option>
-                  <option value="501-1000">$501,000 - $100,000,000</option>
-                  <option value="1001-2000">$1,000,001 - $1,600,000</option>
+                <select
+                  className="form-select"
+                  aria-label="Rango de precio"
+                  value={precioRange}
+                  onChange={(e) => setPrecioRange(e.target.value)}
+                >
+                  <option value="">Rango de precio</option>
+                  <option value="0-500000">$0 - $500.000</option>
+                  <option value="500001-1000000">$500.001 - $1.000.000</option>
+                  <option value="1000001-1600000">$1.000.001 - $1.600.000</option>
+                  <option value="1600001-999999999">$1.600.001+</option>
                 </select>
                 <button type="submit" className="btn btn-primary">
                   Buscar

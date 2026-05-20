@@ -7,7 +7,6 @@ import { documentoService } from "../api/documentService";
 
 import type { 
     DocumentoDTO, 
-    DocumentoFilters,
 } from "../types/index";
 // ===============================================
 // CONSTANTES DE ESTADO 
@@ -15,6 +14,7 @@ import type {
 const ESTADO_PENDIENTE = 1;
 const ESTADO_ACEPTADO = 2;
 const ESTADO_RECHAZADO = 3;
+const ESTADO_EN_REVISION = 4;
 
 // DECLARACIÓN DE COMPONENTE (Sin React.FC)
 const GestionDocumentos = () => {
@@ -28,12 +28,7 @@ const GestionDocumentos = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [notificacion, setNotificacion] = useState<{ variant: 'success' | 'danger'; message: string } | null>(null);
-
-    // Estado para filtros (solo mostraremos PENDIENTES por defecto)
-    const filters: DocumentoFilters = useMemo(
-        () => ({ estadoId: ESTADO_PENDIENTE, includeDetails: true }),
-        []
-    );
+    const [estadoFiltro, setEstadoFiltro] = useState<number>(ESTADO_PENDIENTE);
 
     // Estado para Modales y Acciones
     const [showModal, setShowModal] = useState(false);
@@ -65,13 +60,8 @@ const GestionDocumentos = () => {
         setError(null);
 
         try {
-            let fetchedData: DocumentoDTO[] = await documentoService.listar(Boolean(filters.includeDetails));
-            
-            if (filters.estadoId) {
-                fetchedData = fetchedData.filter(d => d.estadoId === filters.estadoId);
-            }
-            
-            setDocumentos(fetchedData);
+            const fetchedData: DocumentoDTO[] = await documentoService.listar(true);
+            setDocumentos(Array.isArray(fetchedData) ? fetchedData : []);
 
         } catch (err: unknown) { // Usamos 'unknown' en lugar de 'any'
             console.error("Error al cargar documentos:", err);
@@ -81,7 +71,7 @@ const GestionDocumentos = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [filters.estadoId, filters.includeDetails, normalizedRole, notify]);
+    }, [normalizedRole, notify]);
 
 
     // ----------------------------------------------------------------------
@@ -147,7 +137,28 @@ const GestionDocumentos = () => {
     // RENDERIZADO
     // ----------------------------------------------------------------------
 
-    const documentosPendientes = documentos.filter(d => d.estadoId === ESTADO_PENDIENTE);
+    const counts = useMemo(() => {
+        const all = documentos || [];
+        return {
+            pendientes: all.filter(d => Number(d.estadoId) === ESTADO_PENDIENTE).length,
+            enRevision: all.filter(d => Number(d.estadoId) === ESTADO_EN_REVISION).length,
+            aprobados: all.filter(d => Number(d.estadoId) === ESTADO_ACEPTADO).length,
+            rechazados: all.filter(d => Number(d.estadoId) === ESTADO_RECHAZADO).length,
+        };
+    }, [documentos]);
+
+    const documentosFiltrados = useMemo(() => {
+        return (documentos || []).filter(d => Number(d.estadoId) === estadoFiltro);
+    }, [documentos, estadoFiltro]);
+
+    const getEstadoBadge = (estadoId: number) => {
+        const e = Number(estadoId);
+        if (e === ESTADO_PENDIENTE) return { text: "PENDIENTE", cls: "bg-warning text-dark" };
+        if (e === ESTADO_EN_REVISION) return { text: "EN_REVISION", cls: "bg-info text-dark" };
+        if (e === ESTADO_ACEPTADO) return { text: "ACEPTADO", cls: "bg-success" };
+        if (e === ESTADO_RECHAZADO) return { text: "RECHAZADO", cls: "bg-danger" };
+        return { text: "DESCONOCIDO", cls: "bg-secondary" };
+    };
 
     if (normalizedRole !== ROLES.ADMIN) {
         return <div className="container my-5 alert alert-danger">Acceso denegado.</div>;
@@ -162,66 +173,120 @@ const GestionDocumentos = () => {
                     </div>
                 </div>
             )}
-            <h1 className="fw-bold">Gestión de Documentos ({documentosPendientes.length} Pendientes)</h1>
+            <h1 className="fw-bold">Gestión de Documentos</h1>
             <p className="text-muted">Revisa y gestiona los documentos de los usuarios para aprobar o rechazar su elegibilidad.</p>
             
             {error && <div className="alert alert-danger mt-3">{error}</div>}
 
             {isLoading ? (
                 <div className="text-center my-5"><div className="spinner-border text-primary"></div><p className="mt-2">Cargando documentos...</p></div>
-            ) : documentosPendientes.length === 0 ? (
+            ) : documentos.length === 0 ? (
                 <div className="alert alert-success text-center mt-4">
-                    🎉 ¡No hay documentos pendientes de revisión!
+                    🎉 No hay documentos para mostrar.
                 </div>
             ) : (
-                <div className="table-responsive mt-4">
-                    <table className="table table-hover align-middle">
-                        <thead className="table-dark">
-                            <tr>
-                                <th>Usuario</th>
-                                <th>Tipo de Documento</th>
-                                <th>Nombre Archivo</th>
-                                <th>Subido en</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {documentosPendientes.map((doc) => (
-                                <tr key={doc.id}>
-                                    <td>
-                                        {doc.usuario?.pnombre} {doc.usuario?.papellido || 'Usuario Desconocido'}
-                                        <div className="small text-muted">{doc.usuario?.email}</div>
-                                    </td>
-                                    <td>{doc.tipoDocNombre || `ID: ${doc.tipoDocId}`}</td>
-                                    <td>
-                                        {doc.nombre}
-                                        {/* 🚨 Aquí deberías añadir un botón/link para ver/descargar el documento real */}
-                                        <button className="btn btn-sm btn-outline-info ms-2">Ver</button>
-                                    </td>
-                                    <td>{new Date(doc.fechaSubido).toLocaleDateString()}</td>
-                                    <td>
-                                        <span className="badge bg-warning">{doc.estadoNombre || 'PENDIENTE'}</span>
-                                    </td>
-                                    <td>
-                                        <button 
-                                            className="btn btn-success btn-sm me-2"
-                                            onClick={() => iniciarAccion(doc, 'aprobar')}
-                                        >
-                                            Aprobar
-                                        </button>
-                                        <button 
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() => iniciarAccion(doc, 'rechazar')}
-                                        >
-                                            Rechazar
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <>
+                    <ul className="nav nav-pills mt-3">
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                className={`nav-link${estadoFiltro === ESTADO_PENDIENTE ? " active" : ""}`}
+                                onClick={() => setEstadoFiltro(ESTADO_PENDIENTE)}
+                            >
+                                Pendientes ({counts.pendientes})
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                className={`nav-link${estadoFiltro === ESTADO_EN_REVISION ? " active" : ""}`}
+                                onClick={() => setEstadoFiltro(ESTADO_EN_REVISION)}
+                            >
+                                En revisión ({counts.enRevision})
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                className={`nav-link${estadoFiltro === ESTADO_ACEPTADO ? " active" : ""}`}
+                                onClick={() => setEstadoFiltro(ESTADO_ACEPTADO)}
+                            >
+                                Aprobados ({counts.aprobados})
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                className={`nav-link${estadoFiltro === ESTADO_RECHAZADO ? " active" : ""}`}
+                                onClick={() => setEstadoFiltro(ESTADO_RECHAZADO)}
+                            >
+                                Rechazados ({counts.rechazados})
+                            </button>
+                        </li>
+                    </ul>
+
+                    {documentosFiltrados.length === 0 ? (
+                        <div className="alert alert-secondary text-center mt-4">
+                            No hay documentos en esta categoría.
+                        </div>
+                    ) : (
+                        <div className="table-responsive mt-4">
+                            <table className="table table-hover align-middle">
+                                <thead className="table-dark">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Tipo de Documento</th>
+                                        <th>Nombre Archivo</th>
+                                        <th>Subido en</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {documentosFiltrados.map((doc) => {
+                                        const estado = getEstadoBadge(doc.estadoId);
+                                        const canAct = Number(doc.estadoId) === ESTADO_PENDIENTE || Number(doc.estadoId) === ESTADO_EN_REVISION;
+                                        return (
+                                            <tr key={doc.id}>
+                                                <td>
+                                                    {doc.usuario?.pnombre} {doc.usuario?.papellido || 'Usuario Desconocido'}
+                                                    <div className="small text-muted">{doc.usuario?.email}</div>
+                                                </td>
+                                                <td>{doc.tipoDocNombre || `ID: ${doc.tipoDocId}`}</td>
+                                                <td>
+                                                    {doc.nombre}
+                                                    <button type="button" className="btn btn-sm btn-outline-info ms-2">Ver</button>
+                                                </td>
+                                                <td>{new Date(doc.fechaSubido).toLocaleDateString()}</td>
+                                                <td>
+                                                    <span className={`badge ${estado.cls}`}>{doc.estadoNombre || estado.text}</span>
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-success btn-sm me-2"
+                                                        onClick={() => iniciarAccion(doc, 'aprobar')}
+                                                        disabled={!canAct}
+                                                    >
+                                                        Aprobar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-danger btn-sm"
+                                                        onClick={() => iniciarAccion(doc, 'rechazar')}
+                                                        disabled={!canAct}
+                                                    >
+                                                        Rechazar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* --- MODAL DE APROBACIÓN/RECHAZO --- */}

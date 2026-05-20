@@ -98,10 +98,18 @@ const Contacto: React.FC = () => {
     value: string,
     campo: keyof Errores
   ) => {
-    setter(value);
+    const limites: Partial<Record<keyof Errores, number>> = {
+      asunto: 200,
+      mensaje: 5000,
+    };
+
+    const max = limites[campo];
+    const nextValue = max !== undefined ? value.slice(0, max) : value;
+
+    setter(nextValue);
 
     const currentFormState = { nombre, email, asunto, mensaje, telefono };
-    const updatedState = { ...currentFormState, [campo]: value };
+    const updatedState = { ...currentFormState, [campo]: nextValue };
 
     validarFormulario(
       updatedState.nombre,
@@ -201,7 +209,7 @@ const Contacto: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="row g-3">
+      <form onSubmit={handleSubmit} className="row g-3 notranslate" translate="no">
         <div className="col-12 col-md-6">
           <label htmlFor="nombre" className="form-label">
             Nombre <span className="text-danger">*</span>
@@ -262,6 +270,7 @@ const Contacto: React.FC = () => {
             onChange={(e) => handleInputChange(setAsunto, e.target.value, "asunto")}
             placeholder="Consulta sobre arriendo"
             disabled={loading}
+            maxLength={200}
           />
           {errores.asunto && <p className="text-danger mt-1">{errores.asunto}</p>}
           <small className="text-muted">{asunto.length}/200 caracteres</small>
@@ -279,6 +288,7 @@ const Contacto: React.FC = () => {
             rows={6}
             placeholder="Escribe tu mensaje aquí... (mínimo 10 caracteres)"
             disabled={loading}
+            maxLength={5000}
           ></textarea>
           {errores.mensaje && <p className="text-danger mt-1">{errores.mensaje}</p>}
           <small className="text-muted">{mensaje.length}/5000 caracteres</small>

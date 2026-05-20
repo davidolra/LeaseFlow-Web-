@@ -10,6 +10,12 @@ import Perfil from "./paginas/perfil";
 import Valoraciones from "./paginas/Valoraciones";
 import GestionPropiedades from "./paginas/GestionPropiedades";
 import GestionDocumentos from "./paginas/GestionDocumentos"; 
+import AdminDashboard from "./paginas/AdminDashboard";
+import GestionUsuarios from "./paginas/GestionUsuarios";
+import GestionContacto from "./paginas/GestionContacto";
+import MisSolicitudes from "./paginas/MisSolicitudes";
+import SolicitudesRecibidas from "./paginas/SolicitudesRecibidas";
+import MisArriendos from "./paginas/MisArriendos";
 import { ROLES } from "./config/apiConfig"; 
 
 function App() {
@@ -19,12 +25,12 @@ function App() {
 
   const isHome = location.pathname === "/";
   const userRole = localStorage.getItem("userRole") || "";
+  const normalizedRole = userRole.toUpperCase();
+  const isAdmin = isLoggedIn && normalizedRole === ROLES.ADMIN;
+  const isPropietario = isLoggedIn && normalizedRole === ROLES.PROPIETARIO;
+  const isArrendatario = isLoggedIn && normalizedRole === ROLES.ARRIENDATARIO;
 
-  const canManageProperties =
-    isLoggedIn &&
-    (userRole.toUpperCase() === ROLES.PROPIETARIO || userRole.toUpperCase() === ROLES.ADMIN);
-
-  const canManageDocuments = isLoggedIn && userRole.toUpperCase() === ROLES.ADMIN;
+  const canManageDocuments = isAdmin;
 
 
   useEffect(() => {
@@ -32,12 +38,21 @@ function App() {
     if (storedLogin === "true") setIsLoggedIn(true);
   }, []);
 
+  useEffect(() => {
+    const onAuthChanged = () => {
+      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    };
+    window.addEventListener("lf-auth-changed", onAuthChanged);
+    return () => window.removeEventListener("lf-auth-changed", onAuthChanged);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole");
     setIsLoggedIn(false);
+    window.dispatchEvent(new Event("lf-auth-changed"));
     navigate("/");
   };
 
@@ -74,8 +89,8 @@ function App() {
           <Link to="/arrienda" className={`lf-sidebar-link${location.pathname === "/arrienda" ? " active" : ""}`}>
             <span className="lf-ico" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-                <path d="M4 21V9.5L12 3l8 6.5V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                <path d="M8.5 21v-6.5h7V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M10.5 18.5a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M16 16l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
             <span className="lf-tooltip">Arrienda</span>
@@ -91,19 +106,90 @@ function App() {
             <span className="lf-tooltip">Contacto</span>
           </Link>
 
-          {canManageProperties ? (
+          {isAdmin ? (
+            <Link to="/admin" className={`lf-sidebar-link${location.pathname === "/admin" ? " active" : ""}`}>
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Dashboard</span>
+            </Link>
+          ) : null}
+
+          {(isPropietario || isAdmin) ? (
             <Link
-              to="/gestion-propiedades"
-              className={`lf-sidebar-link${location.pathname === "/gestion-propiedades" ? " active" : ""}`}
+              to="/mis-propiedades"
+              className={`lf-sidebar-link${location.pathname === "/mis-propiedades" ? " active" : ""}`}
             >
               <span className="lf-ico" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
                   <path d="M4 21V9.5L12 3l8 6.5V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  <path d="M7 21V12h4v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  <path d="M13 13h4v4h-4z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M8.5 21v-6.5h7V21" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                 </svg>
               </span>
               <span className="lf-tooltip">Mis Propiedades</span>
+            </Link>
+          ) : null}
+
+          {isAdmin ? (
+            <Link
+              to="/gestor-propiedades"
+              className={`lf-sidebar-link${location.pathname === "/gestor-propiedades" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M4 21V8l8-5 8 5v13" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M7 21V12h4v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M14 12h3v3h-3zM14 16h3v3h-3z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Gestor Propiedades</span>
+            </Link>
+          ) : null}
+
+          {(isPropietario || isAdmin) ? (
+            <Link
+              to="/solicitudes-recibidas"
+              className={`lf-sidebar-link${location.pathname === "/solicitudes-recibidas" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M4 7h16v14H4z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M7 3h10v4H7z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Solicitudes</span>
+            </Link>
+          ) : null}
+
+          {(isArrendatario || isAdmin) ? (
+            <Link
+              to="/mis-solicitudes"
+              className={`lf-sidebar-link${location.pathname === "/mis-solicitudes" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M7 4h10v16H7z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 8h6M9 12h6M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Mis Solicitudes</span>
+            </Link>
+          ) : null}
+
+          {(isArrendatario || isAdmin) ? (
+            <Link
+              to="/mis-arriendos"
+              className={`lf-sidebar-link${location.pathname === "/mis-arriendos" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M7 10h10v11H7z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 10V7a3 3 0 1 1 6 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Mis Arriendos</span>
             </Link>
           ) : null}
 
@@ -119,7 +205,40 @@ function App() {
                   <path d="M8.5 12h7M8.5 16h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </span>
-              <span className="lf-tooltip">Admin Documentos</span>
+              <span className="lf-tooltip">Gestión de Documentos</span>
+            </Link>
+          ) : null}
+
+          {isAdmin ? (
+            <Link
+              to="/gestion-usuarios"
+              className={`lf-sidebar-link${location.pathname === "/gestion-usuarios" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M19 8.5h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M21 6.5v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Gestión de Usuarios</span>
+            </Link>
+          ) : null}
+
+          {isAdmin ? (
+            <Link
+              to="/gestion-contacto"
+              className={`lf-sidebar-link${location.pathname === "/gestion-contacto" ? " active" : ""}`}
+            >
+              <span className="lf-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                  <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M19 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="lf-tooltip">Gestión de Contacto</span>
             </Link>
           ) : null}
 
@@ -189,12 +308,21 @@ function App() {
 
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />} />
+            <Route path="/subir-documentos" element={<Registro mode="upload" />} />
 
             <Route path="/perfil" element={<Perfil />} />
+            <Route path="/mis-propiedades" element={<GestionPropiedades scope={isAdmin ? "MINE" : "AUTO"} />} />
+            <Route path="/gestor-propiedades" element={<GestionPropiedades scope="ALL" />} />
             <Route path="/gestion-propiedades" element={<GestionPropiedades />} />
             <Route path="/valoraciones" element={<Valoraciones />} />
             
             <Route path="/gestion-documentos" element={<GestionDocumentos />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
+            <Route path="/gestion-contacto" element={<GestionContacto />} />
+            <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
+            <Route path="/solicitudes-recibidas" element={<SolicitudesRecibidas />} />
+            <Route path="/mis-arriendos" element={<MisArriendos />} />
           </Routes>
         </div>
 

@@ -37,6 +37,7 @@ export const useUsuarios = () => {
         localStorage.setItem('userRole', rolNombre);
         
         setUsuario(response.usuario);
+        window.dispatchEvent(new Event('lf-auth-changed'));
       }
 
       return response;

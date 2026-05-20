@@ -20,12 +20,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Validación local de longitud de contraseña
-    if (password.length < 8) {
-      setErrorMessage("La contraseña debe tener al menos 8 caracteres");
-      return;
-    }
-
     try {
       console.log("Intentando login con:", email);
       
@@ -40,7 +34,6 @@ const Login: React.FC = () => {
       if (response.success) {
         console.log("Login exitoso, redirigiendo...");
         navigate("/");
-        window.location.reload(); // Forzar recarga para actualizar navbar
       } else if (response.mensaje) {
         setErrorMessage(response.mensaje);
       } else {
@@ -123,9 +116,7 @@ const Login: React.FC = () => {
               placeholder="Mínimo 8 caracteres"
               required
               disabled={loading}
-              minLength={8}
             />
-            <small className="text-muted">La contraseña debe tener al menos 8 caracteres</small>
           </div>
 
           <button 

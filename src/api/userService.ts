@@ -153,6 +153,61 @@ export const userService = {
     }
   },
 
+  async actualizar(id: number, datos: Partial<UsuarioDTO>): Promise<UsuarioDTO> {
+    try {
+      const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
+        method: 'PUT',
+        headers: API_CONFIG.HEADERS,
+        body: JSON.stringify(datos),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el usuario`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return handleError(error, `actualizarUsuario(${id})`);
+    }
+  },
+
+  async actualizarRol(id: number, rolId: number): Promise<UsuarioDTO> {
+    try {
+      const response = await fetch(`${BASE_URL}/usuarios/${id}/rol?rolId=${encodeURIComponent(String(rolId))}`, {
+        method: 'PATCH',
+        headers: API_CONFIG.HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el rol`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return handleError(error, `actualizarRol(${id})`);
+    }
+  },
+
+  async actualizarEstado(id: number, estadoId: number): Promise<UsuarioDTO> {
+    try {
+      const response = await fetch(`${BASE_URL}/usuarios/${id}/estado?estadoId=${encodeURIComponent(String(estadoId))}`, {
+        method: 'PATCH',
+        headers: API_CONFIG.HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el estado`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return handleError(error, `actualizarEstadoUsuario(${id})`);
+    }
+  },
+
   /**
    * Verificar si existe un usuario por ID
    */
