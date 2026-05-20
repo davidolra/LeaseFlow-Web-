@@ -167,16 +167,20 @@ const fetchPropiedades = async () => {
   
   const handleAgregarPropiedad = () => {
     setModoEdicion(false);
-    // Reinicia el estado con valores por defecto y código único
+    const nextRegionId = regiones.length > 0 ? regiones[0].id : 0;
+    const firstComunaInRegion =
+      nextRegionId ? comunas.find((c) => c.regionId === nextRegionId)?.id : undefined;
+    const nextComunaId = firstComunaInRegion ?? (comunas.length > 0 ? comunas[0].id : 0);
+
     setPropiedadActual({
       ...INITIAL_PROPIEDAD_STATE,
-      codigo: 'AUTO-' + Date.now(), 
-      propietarioId: userId ? Number(userId) : 0, 
+      codigo: `AUTO-${Date.now()}`,
+      propietarioId: userId ? Number(userId) : 0,
       propietarioEmail: userEmail,
-      tipoId: tipos.length > 0 ? tipos[0].id : 0, // Setea el primer tipo disponible si existe
-      comunaId: comunas.length > 0 ? comunas[0].id : 0, // Setea la primera comuna disponible si existe
+      tipoId: tipos.length > 0 ? tipos[0].id : 0,
+      comunaId: nextComunaId,
     });
-    setRegionId(regiones.length > 0 ? regiones[0].id : 0);
+    setRegionId(nextRegionId);
     setShowModal(true);
   };
 
@@ -232,27 +236,26 @@ const fetchPropiedades = async () => {
       return;
     }
    
-    // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
-    const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
-
-        codigo: propiedadActual.codigo || 'WEB-' + Date.now(),
-        titulo: propiedadActual.titulo,
-        descripcion: propiedadActual.descripcion || '',
-        direccion: propiedadActual.direccion,
-        precioMensual: propiedadActual.precioMensual,
-        
-        // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
-        divisa: propiedadActual.divisa,
-        m2: propiedadActual.m2,          
-        nHabit: propiedadActual.nHabit,   
-        nBanos: propiedadActual.nBanos,   
-        petFriendly: propiedadActual.petFriendly,
-        tipoId: propiedadActual.tipoId,    
-        comunaId: propiedadActual.comunaId,  
-        
-        // Campo extra para el Backend
-        propietarioId: Number(userId), 
-    };
+   // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
+    const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
+        codigo: propiedadActual.codigo || 'W-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        titulo: propiedadActual.titulo,               // 🚨 Lo recuperamos
+        descripcion: propiedadActual.descripcion || '', // 🚨 Lo recuperamos
+        direccion: propiedadActual.direccion,         // 🚨 Lo recuperamos
+        precioMensual: propiedadActual.precioMensual,
+        
+        // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
+        divisa: propiedadActual.divisa,
+        m2: propiedadActual.m2,          
+        nHabit: propiedadActual.nHabit,   
+        nBanos: propiedadActual.nBanos,   
+        petFriendly: propiedadActual.petFriendly,
+        tipoId: propiedadActual.tipoId,    
+        comunaId: propiedadActual.comunaId,  
+        
+        // Campo extra para el Backend
+        propietarioId: Number(userId), 
+    };
 
     try {
       let message: string;
