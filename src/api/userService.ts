@@ -266,6 +266,14 @@ export const userService = {
 
         if (response.status === 404 || response.status === 405) continue;
 
+        if (response.status === 401) {
+          throw new Error("Sesión expirada. Vuelve a iniciar sesión para eliminar usuarios.");
+        }
+
+        if (response.status === 403) {
+          throw new Error("No tienes permisos para eliminar usuarios.");
+        }
+
         const text = await response.text().catch(() => '');
         let message = `Error ${response.status}: No se pudo eliminar el usuario`;
         try {

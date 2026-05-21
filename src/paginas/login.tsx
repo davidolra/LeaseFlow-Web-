@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUsuarios } from "../hooks/useUsuarios";
 
 const Login: React.FC = () => {
@@ -10,6 +10,34 @@ const Login: React.FC = () => {
   
   const { login, loading, error } = useUsuarios();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevTranslate = html.getAttribute("translate");
+    const hadNoTranslate = body.classList.contains("notranslate");
+
+    html.setAttribute("translate", "no");
+    body.classList.add("notranslate");
+
+    return () => {
+      if (prevTranslate === null) html.removeAttribute("translate");
+      else html.setAttribute("translate", prevTranslate);
+
+      if (!hadNoTranslate) body.classList.remove("notranslate");
+    };
+  }, []);
+
+  const redirectPath = useMemo(() => {
+    const state = location.state as any;
+    const from = state?.from;
+    if (typeof from === "string") return from;
+    if (from?.pathname) return from.pathname;
+    return "/";
+  }, [location.state]);
+
+  const uiError = errorMessage || error || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +49,6 @@ const Login: React.FC = () => {
     }
 
     try {
-      console.log("Intentando login con:", email);
-      
       const response = await login({ email, clave: password });
 
       // Verificar si la respuesta es válida
@@ -32,16 +58,13 @@ const Login: React.FC = () => {
       }
 
       if (response.success) {
-        console.log("Login exitoso, redirigiendo...");
-        navigate("/");
+        navigate(redirectPath, { replace: true });
       } else if (response.mensaje) {
         setErrorMessage(response.mensaje);
       } else {
         setErrorMessage("Credenciales inválidas");
       }
     } catch (err: any) {
-      console.error("Error en login:", err);
-      
       // Extraer mensaje de error más específico
       let errorMsg = "Error al conectar con el servidor";
       
@@ -78,15 +101,9 @@ const Login: React.FC = () => {
         </button>
         <h2 className="text-center mb-4">Iniciar sesión</h2>
 
-        {errorMessage && (
+        {uiError && (
           <div className="alert alert-danger" role="alert">
-            {errorMessage}
-          </div>
-        )}
-
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
+            {uiError}
           </div>
         )}
 

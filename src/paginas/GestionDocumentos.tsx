@@ -270,7 +270,7 @@ const GestionDocumentos = () => {
                                                         type="button"
                                                         className="btn btn-success btn-sm me-2"
                                                         onClick={() => iniciarAccion(doc, 'aprobar')}
-                                                        disabled={!canAct}
+                                                        disabled={processing || !canAct}
                                                     >
                                                         Aprobar
                                                     </button>
@@ -278,7 +278,7 @@ const GestionDocumentos = () => {
                                                         type="button"
                                                         className="btn btn-danger btn-sm"
                                                         onClick={() => iniciarAccion(doc, 'rechazar')}
-                                                        disabled={!canAct}
+                                                        disabled={processing || !canAct}
                                                     >
                                                         Rechazar
                                                     </button>

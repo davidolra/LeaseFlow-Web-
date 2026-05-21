@@ -93,7 +93,10 @@ function App() {
                 <path d="M3 11.5 12 4l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
               </svg>
             </span>
-            <span className="lf-tooltip">Home</span>
+            <span className="lf-tooltip">
+              <span className="lf-tooltip-title">Home</span>
+              <span className="lf-tooltip-sub">/</span>
+            </span>
           </Link>
 
           <Link to="/nosotros" title="Nosotros" className={`lf-sidebar-link${location.pathname === "/nosotros" ? " active" : ""}`}>
@@ -104,7 +107,10 @@ function App() {
                 <path d="M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <span className="lf-tooltip">Nosotros</span>
+            <span className="lf-tooltip">
+              <span className="lf-tooltip-title">Nosotros</span>
+              <span className="lf-tooltip-sub">/nosotros</span>
+            </span>
           </Link>
 
           <Link to="/arrienda" title="Arrienda" className={`lf-sidebar-link${location.pathname === "/arrienda" ? " active" : ""}`}>
@@ -114,7 +120,10 @@ function App() {
                 <path d="M16 16l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <span className="lf-tooltip">Arrienda</span>
+            <span className="lf-tooltip">
+              <span className="lf-tooltip-title">Arrienda</span>
+              <span className="lf-tooltip-sub">/arrienda</span>
+            </span>
           </Link>
 
           <Link to="/contacto" title="Contacto" className={`lf-sidebar-link${location.pathname === "/contacto" ? " active" : ""}`}>
@@ -124,7 +133,10 @@ function App() {
                 <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
               </svg>
             </span>
-            <span className="lf-tooltip">Contacto</span>
+            <span className="lf-tooltip">
+              <span className="lf-tooltip-title">Contacto</span>
+              <span className="lf-tooltip-sub">/contacto</span>
+            </span>
           </Link>
 
           {isAdmin ? (
@@ -146,7 +158,10 @@ function App() {
                         <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" stroke="currentColor" strokeWidth="1.8" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Dashboard</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Dashboard</span>
+                      <span className="lf-tooltip-sub">/admin</span>
+                    </span>
                   </Link>
 
                   <Link to="/gestor-propiedades" title="Gestor Propiedades" className={`lf-sidebar-link${location.pathname === "/gestor-propiedades" ? " active" : ""}`}>
@@ -157,7 +172,10 @@ function App() {
                         <path d="M14 12h3v3h-3zM14 16h3v3h-3z" stroke="currentColor" strokeWidth="1.8" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Gestor Propiedades</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Gestor Propiedades</span>
+                      <span className="lf-tooltip-sub">/gestor-propiedades</span>
+                    </span>
                   </Link>
 
                   <Link to="/gestion-documentos" title="Gestión de Documentos" className={`lf-sidebar-link${location.pathname === "/gestion-documentos" ? " active" : ""}`}>
@@ -168,7 +186,10 @@ function App() {
                         <path d="M8.5 12h7M8.5 16h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Gestión de Documentos</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Gestión de Documentos</span>
+                      <span className="lf-tooltip-sub">/gestion-documentos</span>
+                    </span>
                   </Link>
 
                   <Link to="/gestion-usuarios" title="Gestión de Usuarios" className={`lf-sidebar-link${location.pathname === "/gestion-usuarios" ? " active" : ""}`}>
@@ -180,7 +201,10 @@ function App() {
                         <path d="M21 6.5v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Gestión de Usuarios</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Gestión de Usuarios</span>
+                      <span className="lf-tooltip-sub">/gestion-usuarios</span>
+                    </span>
                   </Link>
 
                   <Link to="/gestion-contacto" title="Gestión de Contacto" className={`lf-sidebar-link${location.pathname === "/gestion-contacto" ? " active" : ""}`}>
@@ -191,7 +215,10 @@ function App() {
                         <path d="M19 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Gestión de Contacto</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Gestión de Contacto</span>
+                      <span className="lf-tooltip-sub">/gestion-contacto</span>
+                    </span>
                   </Link>
                 </div>
               </details>
@@ -214,7 +241,10 @@ function App() {
                         <path d="M7 21V12h4v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Propiedades</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Propiedades</span>
+                      <span className="lf-tooltip-sub">/mis-propiedades</span>
+                    </span>
                   </Link>
 
                   <Link to="/solicitudes-recibidas" title="Solicitudes" className={`lf-sidebar-link${location.pathname === "/solicitudes-recibidas" ? " active" : ""}`}>
@@ -224,7 +254,10 @@ function App() {
                         <path d="M7 3h10v4H7z" stroke="currentColor" strokeWidth="1.8" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Solicitudes</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Solicitudes</span>
+                      <span className="lf-tooltip-sub">/solicitudes-recibidas</span>
+                    </span>
                   </Link>
                 </div>
               </details>
@@ -247,7 +280,10 @@ function App() {
                         <path d="M9 8h6M9 12h6M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Solicitudes</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Solicitudes</span>
+                      <span className="lf-tooltip-sub">/mis-solicitudes</span>
+                    </span>
                   </Link>
 
                   <Link to="/mis-arriendos" title="Mis Arriendos" className={`lf-sidebar-link${location.pathname === "/mis-arriendos" ? " active" : ""}`}>
@@ -257,7 +293,10 @@ function App() {
                         <path d="M9 10V7a3 3 0 1 1 6 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Arriendos</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Arriendos</span>
+                      <span className="lf-tooltip-sub">/mis-arriendos</span>
+                    </span>
                   </Link>
                 </div>
               </details>
@@ -273,7 +312,10 @@ function App() {
                         <path d="M7 21V12h4v9" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Propiedades</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Propiedades</span>
+                      <span className="lf-tooltip-sub">/mis-propiedades</span>
+                    </span>
                   </Link>
                   <Link to="/solicitudes-recibidas" title="Solicitudes" className={`lf-sidebar-link${location.pathname === "/solicitudes-recibidas" ? " active" : ""}`}>
                     <span className="lf-ico" aria-hidden="true">
@@ -282,7 +324,10 @@ function App() {
                         <path d="M7 3h10v4H7z" stroke="currentColor" strokeWidth="1.8" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Solicitudes</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Solicitudes</span>
+                      <span className="lf-tooltip-sub">/solicitudes-recibidas</span>
+                    </span>
                   </Link>
                 </>
               ) : null}
@@ -296,7 +341,10 @@ function App() {
                         <path d="M9 8h6M9 12h6M9 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Solicitudes</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Solicitudes</span>
+                      <span className="lf-tooltip-sub">/mis-solicitudes</span>
+                    </span>
                   </Link>
                   <Link to="/mis-arriendos" title="Mis Arriendos" className={`lf-sidebar-link${location.pathname === "/mis-arriendos" ? " active" : ""}`}>
                     <span className="lf-ico" aria-hidden="true">
@@ -305,7 +353,10 @@ function App() {
                         <path d="M9 10V7a3 3 0 1 1 6 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                     </span>
-                    <span className="lf-tooltip">Mis Arriendos</span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Mis Arriendos</span>
+                      <span className="lf-tooltip-sub">/mis-arriendos</span>
+                    </span>
                   </Link>
                 </>
               ) : null}
@@ -321,7 +372,10 @@ function App() {
                     <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </span>
-                <span className="lf-tooltip">Mi Perfil</span>
+                <span className="lf-tooltip">
+                  <span className="lf-tooltip-title">Mi Perfil</span>
+                  <span className="lf-tooltip-sub">/perfil</span>
+                </span>
               </Link>
 
               <Link
@@ -334,7 +388,10 @@ function App() {
                     <path d="M12 3l2.7 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.9 6.5 20.3 7.6 14 3 9.6l6.3-.9L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <span className="lf-tooltip">Valoraciones</span>
+                <span className="lf-tooltip">
+                  <span className="lf-tooltip-title">Valoraciones</span>
+                  <span className="lf-tooltip-sub">/valoraciones</span>
+                </span>
               </Link>
             </>
           ) : null}
@@ -353,7 +410,10 @@ function App() {
                   <path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </span>
-              <span className="lf-tooltip">Iniciar sesión</span>
+              <span className="lf-tooltip">
+                <span className="lf-tooltip-title">Iniciar sesión</span>
+                <span className="lf-tooltip-sub">/login</span>
+              </span>
             </Link>
           ) : (
             <button type="button" title="Cerrar sesión" className="lf-sidebar-link lf-sidebar-action" onClick={handleLogout}>
@@ -364,7 +424,10 @@ function App() {
                   <path d="M19 12H10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </span>
-              <span className="lf-tooltip">Cerrar sesión</span>
+              <span className="lf-tooltip">
+                <span className="lf-tooltip-title">Cerrar sesión</span>
+                <span className="lf-tooltip-sub">Acción</span>
+              </span>
             </button>
           )}
         </div>

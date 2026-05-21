@@ -125,17 +125,45 @@
   opacity: 0;
   z-index: 1200;
   pointer-events: none;
-  white-space: nowrap;
-  font-weight: 700;
-  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding: 10px 12px;
   border-radius: 14px;
   color: #0b1b3a;
-  background: rgba(237, 233, 254, 0.92);
-  border: 1px solid rgba(109, 61, 245, 0.35);
+  background: linear-gradient(135deg, rgba(237, 233, 254, 0.96) 0%, rgba(255, 255, 255, 0.92) 100%);
+  border: 1px solid rgba(109, 61, 245, 0.34);
   box-shadow: 0 18px 55px rgba(2, 6, 23, 0.2);
   backdrop-filter: blur(10px);
   transition: opacity 140ms ease;
+}
+
+.lf-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%) rotate(45deg);
+  background: rgba(237, 233, 254, 0.96);
+  border-left: 1px solid rgba(109, 61, 245, 0.26);
+  border-bottom: 1px solid rgba(109, 61, 245, 0.26);
+}
+
+.lf-tooltip-title {
+  font-weight: 900;
+  font-size: 0.92rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.lf-tooltip-sub {
+  font-weight: 800;
+  font-size: 0.78rem;
+  line-height: 1.1;
+  color: rgba(11, 27, 58, 0.72);
+  white-space: nowrap;
 }
 
 .lf-sidebar-link:hover .lf-tooltip {
