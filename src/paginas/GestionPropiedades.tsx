@@ -41,6 +41,9 @@ const GestionPropiedades: React.FC<{ scope?: GestionPropiedadesScope }> = ({ sco
   const [propiedades, setPropiedades] = useState<Propiedad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const [showModal, setShowModal] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -159,6 +162,12 @@ const fetchPropiedades = async () => {
       fetchPropiedades();
     }
   }, [userRole, userId, navigate, scope]); 
+
+  useEffect(() => {
+    if (!notificacion) return;
+    const id = window.setTimeout(() => setNotificacion(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [notificacion]);
   
   
   // ----------------------------------------------------------------------
@@ -186,7 +195,7 @@ const fetchPropiedades = async () => {
 
   const handleEditarPropiedad = (propiedad: Propiedad) => {
     if (userRole !== ROLES.ADMIN && propiedad.propietarioEmail !== userEmail) {
-      alert("No tienes permisos para editar esta propiedad");
+      setNotificacion({ variant: "danger", message: "No tienes permisos para editar esta propiedad." });
       return;
     }
     setModoEdicion(true);
@@ -200,20 +209,24 @@ const fetchPropiedades = async () => {
     const propiedad = propiedades.find(p => p.id === id);
     
     if (userRole !== ROLES.ADMIN && propiedad?.propietarioEmail !== userEmail) {
-      alert("No tienes permisos para eliminar esta propiedad");
+      setNotificacion({ variant: "danger", message: "No tienes permisos para eliminar esta propiedad." });
       return;
     }
-
-    if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
-      try {
-        await propiedadService.eliminar(id); 
-        alert("Propiedad eliminada exitosamente");
-        fetchPropiedades(); 
-      } catch (err: any) {
-        alert("Error al eliminar la propiedad en el servidor: " + (err.message || "Error desconocido"));
-        console.error("Error al eliminar:", err);
-      }
-    }
+    try {
+      setDeletingId(id);
+      setConfirmDeleteId(null);
+      await propiedadService.eliminar(id);
+      setNotificacion({ variant: "success", message: "Propiedad eliminada exitosamente." });
+      fetchPropiedades();
+    } catch (err: any) {
+      setNotificacion({
+        variant: "danger",
+        message: "Error al eliminar la propiedad: " + (err?.message || "Error desconocido"),
+      });
+      console.error("Error al eliminar:", err);
+    } finally {
+      setDeletingId(null);
+    }
   };
   
   const handleGuardarPropiedad = async (e: React.FormEvent) => {
@@ -221,18 +234,21 @@ const fetchPropiedades = async () => {
 
     // Validaciones de campos de texto/precio
     if (!propiedadActual.titulo || !propiedadActual.direccion || propiedadActual.precioMensual <= 0) {
-      alert("Por favor completa los campos obligatorios (Título, Dirección, Precio).");
+      setNotificacion({ variant: "danger", message: "Completa los campos obligatorios (Título, Dirección, Precio)." });
       return;
     }
     
     // Validaciones de campos de selección/numéricos
     if (propiedadActual.comunaId <= 0 || propiedadActual.tipoId <= 0) {
-      alert("Por favor, selecciona una Comuna y un Tipo de Propiedad válidos.");
+      setNotificacion({ variant: "danger", message: "Selecciona una Comuna y un Tipo de Propiedad válidos." });
       return;
     }
     
     if (propiedadActual.m2 <= 0 || propiedadActual.nHabit < 0 || propiedadActual.nBanos < 0) {
-      alert("Verifica que los metros cuadrados (m2) sea mayor a cero, y el número de habitaciones y baños sean válidos.");
+      setNotificacion({
+        variant: "danger",
+        message: "Verifica m² (> 0) y que habitaciones/baños sean valores válidos.",
+      });
       return;
     }
    
@@ -268,12 +284,12 @@ const fetchPropiedades = async () => {
       }
       
       setShowModal(false);
-      alert(message);
+      setNotificacion({ variant: "success", message });
       fetchPropiedades(); 
       
     } catch (err: any) {
       const errorMessage = err.message || 'Error desconocido al guardar la propiedad.';
-      alert(`Error al guardar la propiedad: ${errorMessage}`);
+      setNotificacion({ variant: "danger", message: `Error al guardar la propiedad: ${errorMessage}` });
       console.error("Error al guardar:", err);
     }
   };
@@ -299,6 +315,13 @@ const fetchPropiedades = async () => {
 
   return (
     <div className="container my-5">
+      {notificacion ? (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
+          <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
+            {notificacion.message}
+          </div>
+        </div>
+      ) : null}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="fw-bold">
           {userRole === ROLES.ADMIN ? "Gestión de Propiedades (Administrador)" : "Mis Propiedades"}
@@ -391,15 +414,46 @@ const fetchPropiedades = async () => {
                                 <button 
                                   className="btn btn-primary btn-sm flex-fill"
                                   onClick={() => handleEditarPropiedad(propiedad)}
+                          disabled={deletingId === propiedad.id}
                                 >
                                   Editar
                                 </button>
-                                <button 
-                                  className="btn btn-danger btn-sm flex-fill"
-                                  onClick={() => handleEliminarPropiedad(propiedad.id)}
-                                >
-                                  Eliminar
-                                </button>
+                        {confirmDeleteId === propiedad.id ? (
+                          <div className="d-flex gap-2 flex-fill">
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm flex-fill"
+                              onClick={() => handleEliminarPropiedad(propiedad.id)}
+                              disabled={deletingId === propiedad.id}
+                            >
+                              {deletingId === propiedad.id ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                  ...
+                                </>
+                              ) : (
+                                "Confirmar"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary btn-sm flex-fill"
+                              onClick={() => setConfirmDeleteId(null)}
+                              disabled={deletingId === propiedad.id}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm flex-fill"
+                            onClick={() => setConfirmDeleteId(propiedad.id)}
+                            disabled={deletingId === propiedad.id}
+                          >
+                            Eliminar
+                          </button>
+                        )}
                             </>
                         )}
                       </div>

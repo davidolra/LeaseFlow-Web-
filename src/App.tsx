@@ -20,6 +20,7 @@ import { ROLES } from "./config/apiConfig";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [flash, setFlash] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,6 +45,21 @@ function App() {
     return () => window.removeEventListener("lf-auth-changed", onAuthChanged);
   }, []);
 
+  useEffect(() => {
+    const state = location.state as any;
+    const nextFlash = state?.flash;
+    if (nextFlash?.message) {
+      setFlash(nextFlash);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (!flash) return;
+    const id = window.setTimeout(() => setFlash(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [flash]);
+
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userEmail");
@@ -56,6 +72,13 @@ function App() {
 
   return (
     <div className="app-container">
+      {flash ? (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1085 }}>
+          <div className={`alert alert-${flash.variant} shadow-sm mb-0`} role="alert">
+            {flash.message}
+          </div>
+        </div>
+      ) : null}
       <aside className="lf-sidebar" aria-label="Navegación">
         <div className="lf-sidebar-top">
           <Link to="/" className="lf-sidebar-brand" aria-label="Leaseflow">
@@ -106,7 +129,7 @@ function App() {
 
           {isAdmin ? (
             <>
-              <details className="lf-nav-group" open>
+              <details className="lf-nav-group">
                 <summary className="lf-sidebar-link lf-nav-group-summary">
                   <span className="lf-ico" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none">

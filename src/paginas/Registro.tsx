@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../api/userService";
 import { documentoService } from "../api/documentService";
@@ -48,6 +48,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(isUploadOnly ? 2 : 1); // 1: Datos personales, 2: Documentos
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
   
   const navigate = useNavigate();
 
@@ -184,8 +185,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
     try {
       if (isUploadOnly) {
         if (localStorage.getItem("isLoggedIn") !== "true" || !currentUserId) {
-          alert("Debes iniciar sesión para subir documentos.");
-          navigate("/login");
+          navigate("/login", { state: { flash: { variant: "danger", message: "Debes iniciar sesión para subir documentos." } } });
           return;
         }
 
@@ -203,8 +203,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
           }
         }
 
-        alert("Documentos enviados a revisión.");
-        navigate("/perfil");
+        navigate("/perfil", { state: { flash: { variant: "success", message: "Documentos enviados a revisión." } } });
         return;
       }
 
@@ -262,28 +261,50 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
       localStorage.setItem("userId", usuarioCreado.id.toString());
       localStorage.setItem("userRole", rol);
 
-      // 6. Mostrar mensaje de éxito
-      alert(
-        `¡Registro exitoso! ${isDuocVip ? "Como estudiante DuocUC, tienes 20% de descuento de por vida en comisiones." : ""}\n\nTus documentos están en revisión. Te notificaremos cuando sean aprobados.`
-      );
+      // 6. Mostrar mensaje de éxito (toast global)
+      navigate("/", {
+        state: {
+          flash: {
+            variant: "success",
+            message:
+              `¡Registro exitoso! ${isDuocVip ? "Tienes 20% de descuento DuocUC. " : ""}` +
+              "Tus documentos quedan en revisión.",
+          },
+        },
+      });
 
       // 7. Avisar a App que el usuario está logueado
       onRegisterSuccess?.();
 
-      // 8. Redirigir al perfil
-      navigate("/");
+      // 8. Redirección ya realizada arriba con flash
 
     } catch (error) {
       console.error("Error en el registro:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      alert(`Error al registrar: ${errorMessage}\n\nPor favor, verifica que los microservicios estén corriendo.`);
+      setNotificacion({
+        variant: "danger",
+        message: `Error al registrar: ${errorMessage}. Verifica que los microservicios estén corriendo.`,
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (!notificacion) return;
+    const id = window.setTimeout(() => setNotificacion(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [notificacion]);
+
   return (
     <div className="main-content d-flex justify-content-center align-items-center py-5" style={{ minHeight: "100vh" }}>
+      {notificacion ? (
+        <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
+          <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
+            {notificacion.message}
+          </div>
+        </div>
+      ) : null}
       <div className="contact-form-container p-4 rounded shadow-lg" style={{ width: "100%", maxWidth: currentStep === 1 ? "600px" : "800px" }}>
         <h2 className="text-center mb-4 text-primary">
           {isUploadOnly ? "Subir documentos" : (currentStep === 1 ? "Crear cuenta - Paso 1/2" : "Crear cuenta - Paso 2/2")}

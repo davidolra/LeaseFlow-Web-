@@ -14,6 +14,7 @@ const MisSolicitudes: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -50,11 +51,9 @@ const MisSolicitudes: React.FC = () => {
   }, [fetchSolicitudes]);
 
   const cancelar = async (id: number) => {
-    const ok = window.confirm("¿Cancelar esta solicitud?");
-    if (!ok) return;
-
     try {
       setProcessingId(id);
+      setConfirmCancelId(null);
       const updated = await solicitudService.actualizarEstado(id, "RECHAZADA");
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setNotificacion({ variant: "success", message: "Solicitud cancelada." });
@@ -120,21 +119,42 @@ const MisSolicitudes: React.FC = () => {
                   </td>
                   <td>{new Date(s.fechaSolicitud).toLocaleString()}</td>
                   <td>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => cancelar(s.id)}
-                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
-                    >
-                      {processingId === s.id ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                          Procesando...
-                        </>
-                      ) : (
-                        "Cancelar"
-                      )}
-                    </button>
+                    {confirmCancelId === s.id ? (
+                      <div className="d-flex gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => cancelar(s.id)}
+                          disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                        >
+                          {processingId === s.id ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                              Procesando...
+                            </>
+                          ) : (
+                            "Confirmar"
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => setConfirmCancelId(null)}
+                          disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => setConfirmCancelId(s.id)}
+                        disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                      >
+                        Cancelar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

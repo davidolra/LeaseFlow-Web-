@@ -35,15 +35,13 @@ const Perfil: React.FC = () => {
       try {
         const isLoggedIn = localStorage.getItem("isLoggedIn");
         if (!isLoggedIn) {
-          alert("Debes iniciar sesión para ver tu perfil");
-          navigate("/login");
+          navigate("/login", { state: { flash: { variant: "danger", message: "Debes iniciar sesión para ver tu perfil." } } });
           return;
         }
 
         const userId = localStorage.getItem("userId");
         if (!userId) {
-          alert("No se pudo obtener tu información de usuario");
-          navigate("/login");
+          navigate("/login", { state: { flash: { variant: "danger", message: "No se pudo obtener tu información de usuario." } } });
           return;
         }
 
@@ -53,8 +51,7 @@ const Perfil: React.FC = () => {
         const usuarioData = await obtenerUsuarioActual();
         
         if (!usuarioData) {
-          alert("No se pudo cargar tu perfil");
-          navigate("/login");
+          navigate("/login", { state: { flash: { variant: "danger", message: "No se pudo cargar tu perfil. Vuelve a iniciar sesión." } } });
           return;
         }
 
@@ -78,7 +75,7 @@ const Perfil: React.FC = () => {
 
       } catch (error) {
         console.error("❌ Error al cargar datos:", error);
-        alert("Error al cargar tu perfil. Por favor intenta de nuevo.");
+        setNotificacion({ variant: "danger", message: "Error al cargar tu perfil. Por favor intenta de nuevo." });
       } finally {
         setLoading(false);
       }

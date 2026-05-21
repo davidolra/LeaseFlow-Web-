@@ -70,6 +70,13 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lf-sidebar-nav::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .lf-sidebar-bottom {

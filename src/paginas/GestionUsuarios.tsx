@@ -16,6 +16,7 @@ const GestionUsuarios: React.FC = () => {
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -85,14 +86,12 @@ const GestionUsuarios: React.FC = () => {
   };
 
   const eliminarUsuario = async (id: number, email: string) => {
-    const ok = window.confirm(`¿Eliminar el usuario ${email}?`);
-    if (!ok) return;
-
     try {
       setDeletingId(id);
+      setConfirmDeleteId(null);
       await userService.eliminar(id, adminId || undefined);
       setUsuarios((prev) => prev.filter((u) => u.id !== id));
-      setNotificacion({ variant: "success", message: "Usuario eliminado." });
+      setNotificacion({ variant: "success", message: `Usuario eliminado: ${email}` });
     } catch (err: any) {
       setNotificacion({ variant: "danger", message: err?.message || "No se pudo eliminar el usuario." });
     } finally {
@@ -187,21 +186,42 @@ const GestionUsuarios: React.FC = () => {
                     </select>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => eliminarUsuario(u.id, u.email)}
-                      disabled={deletingId === u.id || updatingId === u.id}
-                    >
-                      {deletingId === u.id ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                          Eliminando...
-                        </>
-                      ) : (
-                        "Eliminar"
-                      )}
-                    </button>
+                    {confirmDeleteId === u.id ? (
+                      <div className="d-flex gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => eliminarUsuario(u.id, u.email)}
+                          disabled={deletingId === u.id || updatingId === u.id}
+                        >
+                          {deletingId === u.id ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                              Eliminando...
+                            </>
+                          ) : (
+                            "Confirmar"
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => setConfirmDeleteId(null)}
+                          disabled={deletingId === u.id || updatingId === u.id}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => setConfirmDeleteId(u.id)}
+                        disabled={deletingId === u.id || updatingId === u.id}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

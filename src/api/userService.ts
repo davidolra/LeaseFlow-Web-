@@ -250,16 +250,34 @@ export const userService = {
 
   async eliminar(id: number, adminId?: number): Promise<void> {
     try {
-      const qs = adminId ? `?adminId=${encodeURIComponent(String(adminId))}` : '';
-      const response = await fetch(`${BASE_URL}/usuarios/${id}${qs}`, {
-        method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo eliminar el usuario`);
+      const candidates: string[] = [];
+      if (adminId) {
+        candidates.push(`${BASE_URL}/usuarios/${id}?adminId=${encodeURIComponent(String(adminId))}`);
       }
+      candidates.push(`${BASE_URL}/usuarios/${id}`);
+
+      for (const url of candidates) {
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: API_CONFIG.HEADERS,
+        });
+
+        if (response.ok) return;
+
+        if (response.status === 404 || response.status === 405) continue;
+
+        const text = await response.text().catch(() => '');
+        let message = `Error ${response.status}: No se pudo eliminar el usuario`;
+        try {
+          const json = text ? JSON.parse(text) : null;
+          message = json?.message || json?.mensaje || message;
+        } catch {
+          if (text) message = `${message}. ${text.slice(0, 200)}`;
+        }
+        throw new Error(message);
+      }
+
+      throw new Error('No se encontró un endpoint compatible para eliminar el usuario (404/405).');
     } catch (error: any) {
       return handleError(error, `eliminarUsuario(${id})`);
     }
