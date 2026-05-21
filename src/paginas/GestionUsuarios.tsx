@@ -5,6 +5,7 @@ import type { EstadoUsuarioDTO, RolDTO, UsuarioDTO } from "../types";
 
 const GestionUsuarios: React.FC = () => {
   const userRole = (localStorage.getItem("userRole") || "").toUpperCase();
+  const adminId = Number(localStorage.getItem("userId") || "0");
 
   const [usuarios, setUsuarios] = useState<UsuarioDTO[]>([]);
   const [roles, setRoles] = useState<RolDTO[]>([]);
@@ -13,6 +14,8 @@ const GestionUsuarios: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -57,21 +60,43 @@ const GestionUsuarios: React.FC = () => {
 
   const cambiarRol = async (id: number, rolId: number) => {
     try {
+      setUpdatingId(id);
       const updated = await userService.actualizarRol(id, rolId);
       setUsuarios((prev) => prev.map((u) => (u.id === id ? updated : u)));
       setNotificacion({ variant: "success", message: "Rol actualizado." });
     } catch (err: any) {
       setNotificacion({ variant: "danger", message: err?.message || "No se pudo actualizar el rol." });
+    } finally {
+      setUpdatingId(null);
     }
   };
 
   const cambiarEstado = async (id: number, estadoId: number) => {
     try {
+      setUpdatingId(id);
       const updated = await userService.actualizarEstado(id, estadoId);
       setUsuarios((prev) => prev.map((u) => (u.id === id ? updated : u)));
       setNotificacion({ variant: "success", message: "Estado actualizado." });
     } catch (err: any) {
       setNotificacion({ variant: "danger", message: err?.message || "No se pudo actualizar el estado." });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const eliminarUsuario = async (id: number, email: string) => {
+    const ok = window.confirm(`¿Eliminar el usuario ${email}?`);
+    if (!ok) return;
+
+    try {
+      setDeletingId(id);
+      await userService.eliminar(id, adminId || undefined);
+      setUsuarios((prev) => prev.filter((u) => u.id !== id));
+      setNotificacion({ variant: "success", message: "Usuario eliminado." });
+    } catch (err: any) {
+      setNotificacion({ variant: "danger", message: err?.message || "No se pudo eliminar el usuario." });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -122,6 +147,7 @@ const GestionUsuarios: React.FC = () => {
                 <th>Correo</th>
                 <th>Rol</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +163,7 @@ const GestionUsuarios: React.FC = () => {
                       className="form-select form-select-sm"
                       value={u.rolId}
                       onChange={(e) => cambiarRol(u.id, Number(e.target.value))}
+                      disabled={updatingId === u.id || deletingId === u.id}
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -150,6 +177,7 @@ const GestionUsuarios: React.FC = () => {
                       className="form-select form-select-sm"
                       value={u.estadoId}
                       onChange={(e) => cambiarEstado(u.id, Number(e.target.value))}
+                      disabled={updatingId === u.id || deletingId === u.id}
                     >
                       {estados.map((es) => (
                         <option key={es.id} value={es.id}>
@@ -157,6 +185,23 @@ const GestionUsuarios: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => eliminarUsuario(u.id, u.email)}
+                      disabled={deletingId === u.id || updatingId === u.id}
+                    >
+                      {deletingId === u.id ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                          Eliminando...
+                        </>
+                      ) : (
+                        "Eliminar"
+                      )}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -172,4 +217,3 @@ const GestionUsuarios: React.FC = () => {
 };
 
 export default GestionUsuarios;
-

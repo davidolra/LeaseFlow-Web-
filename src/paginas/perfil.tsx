@@ -16,6 +16,10 @@ const Perfil: React.FC = () => {
   const [documentos, setDocumentos] = useState<DocumentoDTO[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [notificacion, setNotificacion] = useState<{ variant: 'success' | 'danger'; message: string } | null>(null);
+  const [claveActual, setClaveActual] = useState("");
+  const [claveNueva, setClaveNueva] = useState("");
+  const [confirmClaveNueva, setConfirmClaveNueva] = useState("");
+  const [cambiandoClave, setCambiandoClave] = useState(false);
   
   // Estado para edición
   const [datosEditables, setDatosEditables] = useState({
@@ -143,6 +147,39 @@ const Perfil: React.FC = () => {
     }
     setModoEdicion(false);
     setErrores({});
+  };
+
+  const handleCambiarContrasena = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuario) return;
+
+    if (!claveActual.trim() || !claveNueva.trim()) {
+      setNotificacion({ variant: 'danger', message: "Debes completar la contraseña actual y la nueva." });
+      return;
+    }
+
+    if (claveNueva.length < 8) {
+      setNotificacion({ variant: 'danger', message: "La nueva contraseña debe tener al menos 8 caracteres." });
+      return;
+    }
+
+    if (claveNueva !== confirmClaveNueva) {
+      setNotificacion({ variant: 'danger', message: "La confirmación de la contraseña no coincide." });
+      return;
+    }
+
+    setCambiandoClave(true);
+    try {
+      await userService.cambiarContrasena(usuario.id, claveActual, claveNueva);
+      setClaveActual("");
+      setClaveNueva("");
+      setConfirmClaveNueva("");
+      setNotificacion({ variant: 'success', message: "Contraseña actualizada exitosamente." });
+    } catch (err: any) {
+      setNotificacion({ variant: 'danger', message: err?.message || "No se pudo cambiar la contraseña." });
+    } finally {
+      setCambiandoClave(false);
+    }
   };
 
   const getEstadoDocumento = (estadoId: number): { texto: string; badge: string; icono: string } => {
@@ -388,6 +425,61 @@ const Perfil: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="card shadow-sm mt-4">
+            <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">🔐 Cambio de Contraseña</h5>
+            </div>
+            <div className="card-body">
+              <form className="row g-3" onSubmit={handleCambiarContrasena}>
+                <div className="col-12">
+                  <label className="form-label fw-bold">Contraseña actual</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    value={claveActual}
+                    onChange={(e) => setClaveActual(e.target.value)}
+                    disabled={cambiandoClave}
+                    autoComplete="current-password"
+                  />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-bold">Nueva contraseña</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    value={claveNueva}
+                    onChange={(e) => setClaveNueva(e.target.value)}
+                    disabled={cambiandoClave}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label fw-bold">Confirmar nueva contraseña</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    value={confirmClaveNueva}
+                    onChange={(e) => setConfirmClaveNueva(e.target.value)}
+                    disabled={cambiandoClave}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="col-12">
+                  <button type="submit" className="btn btn-primary w-100" disabled={cambiandoClave}>
+                    {cambiandoClave ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                        Procesando...
+                      </>
+                    ) : (
+                      "Actualizar contraseña"
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
 

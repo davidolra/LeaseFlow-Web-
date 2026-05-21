@@ -13,6 +13,7 @@ const SolicitudesRecibidas: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -58,11 +59,14 @@ const SolicitudesRecibidas: React.FC = () => {
 
   const actualizar = async (id: number, estado: "ACEPTADA" | "RECHAZADA") => {
     try {
+      setProcessingId(id);
       const updated = await solicitudService.actualizarEstado(id, estado);
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setNotificacion({ variant: "success", message: `Solicitud ${estado}.` });
     } catch (e: any) {
       setNotificacion({ variant: "danger", message: e?.message || "No se pudo actualizar la solicitud." });
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -126,11 +130,28 @@ const SolicitudesRecibidas: React.FC = () => {
                   </td>
                   <td>{new Date(s.fechaSolicitud).toLocaleString()}</td>
                   <td className="d-flex gap-2">
-                    <button type="button" className="btn btn-sm btn-success" onClick={() => actualizar(s.id, "ACEPTADA")} disabled={s.estado !== "PENDIENTE"}>
-                      Aceptar
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-success"
+                      onClick={() => actualizar(s.id, "ACEPTADA")}
+                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                    >
+                      {processingId === s.id ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                          Procesando...
+                        </>
+                      ) : (
+                        "Aceptar"
+                      )}
                     </button>
-                    <button type="button" className="btn btn-sm btn-danger" onClick={() => actualizar(s.id, "RECHAZADA")} disabled={s.estado !== "PENDIENTE"}>
-                      Rechazar
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-danger"
+                      onClick={() => actualizar(s.id, "RECHAZADA")}
+                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                    >
+                      {processingId === s.id ? "Procesando..." : "Rechazar"}
                     </button>
                   </td>
                 </tr>
@@ -144,4 +165,3 @@ const SolicitudesRecibidas: React.FC = () => {
 };
 
 export default SolicitudesRecibidas;
-

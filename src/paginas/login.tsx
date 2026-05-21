@@ -65,8 +65,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
-      <div className="nosotros-container lf-auth-card position-relative">
+    <div className="main-content d-flex justify-content-center align-items-center notranslate" translate="no" style={{ minHeight: "80vh" }}>
+      <div className="nosotros-container lf-auth-card position-relative notranslate" translate="no">
         <button
           type="button"
           className="btn btn-link btn-sm position-absolute top-0 end-0 m-2 text-muted"

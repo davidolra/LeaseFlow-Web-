@@ -28,6 +28,7 @@ const GestionDocumentos = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [notificacion, setNotificacion] = useState<{ variant: 'success' | 'danger'; message: string } | null>(null);
+    const [processing, setProcessing] = useState(false);
     const [estadoFiltro, setEstadoFiltro] = useState<number>(ESTADO_PENDIENTE);
 
     // Estado para Modales y Acciones
@@ -102,6 +103,7 @@ const GestionDocumentos = () => {
         }
 
         try {
+            setProcessing(true);
             await documentoService.actualizarEstado(documentoSeleccionado.id, nuevoEstadoId);
             notify(
                 accion === 'aprobar' ? 'success' : 'danger',
@@ -117,6 +119,8 @@ const GestionDocumentos = () => {
                 `Error al ${accion} el documento: ${err instanceof Error ? err.message : 'Error de conexión'}`
             );
             console.error(`Error al actualizar estado:`, err);
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -298,7 +302,7 @@ const GestionDocumentos = () => {
                                 <h5 className="modal-title">
                                     {accion === 'aprobar' ? 'Aprobar Documento' : 'Rechazar Documento'}
                                 </h5>
-                                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                                <button type="button" className="btn-close" onClick={() => setShowModal(false)} disabled={processing}></button>
                             </div>
                             <div className="modal-body">
                                 <p>Confirma que deseas {accion} el documento:</p>
@@ -323,14 +327,20 @@ const GestionDocumentos = () => {
                                 )}
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={processing}>
                                     Cancelar
                                 </button>
                                 <button 
                                     type="submit" 
                                     className={`btn btn-${accion === 'aprobar' ? 'success' : 'danger'}`}
+                                    disabled={processing}
                                 >
-                                    {accion === 'aprobar' ? 'Aprobar' : 'Rechazar'}
+                                    {processing ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Procesando...
+                                        </>
+                                    ) : (accion === 'aprobar' ? 'Aprobar' : 'Rechazar')}
                                 </button>
                             </div>
                         </form>

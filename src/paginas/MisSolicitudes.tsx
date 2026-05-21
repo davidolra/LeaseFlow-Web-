@@ -13,6 +13,7 @@ const MisSolicitudes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -53,11 +54,14 @@ const MisSolicitudes: React.FC = () => {
     if (!ok) return;
 
     try {
+      setProcessingId(id);
       const updated = await solicitudService.actualizarEstado(id, "RECHAZADA");
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setNotificacion({ variant: "success", message: "Solicitud cancelada." });
     } catch (e: any) {
       setNotificacion({ variant: "danger", message: e?.message || "No se pudo cancelar la solicitud." });
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -120,9 +124,16 @@ const MisSolicitudes: React.FC = () => {
                       type="button"
                       className="btn btn-sm btn-outline-danger"
                       onClick={() => cancelar(s.id)}
-                      disabled={s.estado !== "PENDIENTE"}
+                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
                     >
-                      Cancelar
+                      {processingId === s.id ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                          Procesando...
+                        </>
+                      ) : (
+                        "Cancelar"
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -139,4 +150,3 @@ const MisSolicitudes: React.FC = () => {
 };
 
 export default MisSolicitudes;
-

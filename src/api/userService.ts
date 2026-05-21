@@ -208,6 +208,63 @@ export const userService = {
     }
   },
 
+  async cambiarContrasena(id: number, claveActual: string, claveNueva: string): Promise<void> {
+    try {
+      const payload = { claveActual, claveNueva };
+
+      const candidates = [
+        `${BASE_URL}/usuarios/${id}/clave`,
+        `${BASE_URL}/usuarios/${id}/password`,
+        `${BASE_URL}/usuarios/${id}/contrasena`,
+      ];
+
+      for (const url of candidates) {
+        const response = await fetch(url, {
+          method: 'PATCH',
+          headers: API_CONFIG.HEADERS,
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) return;
+
+        if (response.status === 404 || response.status === 405) continue;
+
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo cambiar la contraseña`);
+      }
+
+      const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
+        method: 'PUT',
+        headers: API_CONFIG.HEADERS,
+        body: JSON.stringify({ claveActual, clave: claveNueva }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo cambiar la contraseña`);
+      }
+    } catch (error: any) {
+      return handleError(error, `cambiarContrasena(${id})`);
+    }
+  },
+
+  async eliminar(id: number, adminId?: number): Promise<void> {
+    try {
+      const qs = adminId ? `?adminId=${encodeURIComponent(String(adminId))}` : '';
+      const response = await fetch(`${BASE_URL}/usuarios/${id}${qs}`, {
+        method: 'DELETE',
+        headers: API_CONFIG.HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Error ${response.status}: No se pudo eliminar el usuario`);
+      }
+    } catch (error: any) {
+      return handleError(error, `eliminarUsuario(${id})`);
+    }
+  },
+
   /**
    * Verificar si existe un usuario por ID
    */

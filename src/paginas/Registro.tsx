@@ -32,15 +32,17 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
   const [rol, setRol] = useState<Rol>("");
   const [codigoRef, setCodigoRef] = useState("");
   
-  // Estados para documentos
-  const [documentos, setDocumentos] = useState<Record<string, DocumentoArchivo>>({
-    dni: { nombre: "DNI / Cédula de Identidad", archivo: null, tipoDocId: 1, requerido: true },
+  const initialDocumentos: Record<string, DocumentoArchivo> = {
+    dni: { nombre: "DNI / Cédula de Identidad", archivo: null, tipoDocId: 1, requerido: !isUploadOnly },
     pasaporte: { nombre: "Pasaporte", archivo: null, tipoDocId: 2, requerido: false },
-    liquidacion: { nombre: "Liquidación de Sueldo", archivo: null, tipoDocId: 3, requerido: true },
-    antecedentes: { nombre: "Certificado de Antecedentes", archivo: null, tipoDocId: 4, requerido: true },
-    afp: { nombre: "Certificado AFP", archivo: null, tipoDocId: 5, requerido: true },
+    liquidacion: { nombre: "Liquidación de Sueldo", archivo: null, tipoDocId: 3, requerido: !isUploadOnly },
+    antecedentes: { nombre: "Certificado de Antecedentes", archivo: null, tipoDocId: 4, requerido: !isUploadOnly },
+    afp: { nombre: "Certificado AFP", archivo: null, tipoDocId: 5, requerido: !isUploadOnly },
     contrato: { nombre: "Contrato de Trabajo", archivo: null, tipoDocId: 6, requerido: false },
-  });
+  };
+
+  // Estados para documentos
+  const [documentos, setDocumentos] = useState<Record<string, DocumentoArchivo>>(initialDocumentos);
 
   // Estados para UI
   const [loading, setLoading] = useState(false);
@@ -122,12 +124,18 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
   const validateStep2 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validar solo documentos requeridos
-    Object.entries(documentos).forEach(([key, doc]) => {
-      if (doc.requerido && !doc.archivo) {
-        newErrors[key] = `${doc.nombre} es obligatorio`;
+    if (isUploadOnly) {
+      const anySelected = Object.values(documentos).some((d) => Boolean(d.archivo));
+      if (!anySelected) {
+        newErrors._form = "Selecciona al menos un archivo para enviar.";
       }
-    });
+    } else {
+      Object.entries(documentos).forEach(([key, doc]) => {
+        if (doc.requerido && !doc.archivo) {
+          newErrors[key] = `${doc.nombre} es obligatorio`;
+        }
+      });
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -482,9 +490,15 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
         {currentStep === 2 && (
           <form onSubmit={handleSubmit} className="login-form">
             <div className="alert alert-info mb-4">
-              <strong>Carga de Documentos</strong>
-              <p className="mb-0">Sube los documentos requeridos. Los documentos marcados con (*) son obligatorios.</p>
+              <strong>{isUploadOnly ? "Subir documentos" : "Carga de Documentos"}</strong>
+              <p className="mb-0">
+                {isUploadOnly
+                  ? "Puedes subir documentos de forma individual. Los archivos se enviarán a revisión."
+                  : "Sube los documentos requeridos. Los documentos marcados con (*) son obligatorios."}
+              </p>
             </div>
+
+            {errors._form ? <div className="alert alert-danger">{errors._form}</div> : null}
 
             <div className="row">
               {Object.entries(documentos).map(([key, doc]) => (
