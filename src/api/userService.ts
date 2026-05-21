@@ -274,6 +274,20 @@ export const userService = {
           throw new Error("No tienes permisos para eliminar usuarios.");
         }
 
+        if (response.status === 409) {
+          throw new Error(
+            "No se puede eliminar el usuario porque tiene entidades asociadas (propiedades/solicitudes). " +
+              "Elimina primero esas dependencias y vuelve a intentar."
+          );
+        }
+
+        if (response.status >= 500) {
+          throw new Error(
+            "El servidor no pudo completar la eliminación (error interno). " +
+              "Si el usuario tiene propiedades o solicitudes, elimínalas primero y vuelve a intentar."
+          );
+        }
+
         const text = await response.text().catch(() => '');
         let message = `Error ${response.status}: No se pudo eliminar el usuario`;
         try {

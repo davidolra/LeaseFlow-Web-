@@ -19,6 +19,22 @@ import type {
 
 const BASE_URL = API_CONFIG.PROPERTY_SERVICE;
 
+type PageResponse<T> = {
+  content: T[];
+  number?: number;
+  size?: number;
+  totalElements?: number;
+  totalPages?: number;
+};
+
+const unwrapPage = <T>(data: unknown): T[] => {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === "object" && Array.isArray((data as any).content)) {
+    return (data as PageResponse<T>).content;
+  }
+  return [];
+};
+
 /**
  * Manejo de errores centralizado
  */
@@ -64,9 +80,9 @@ export const propiedadService = {
   /**
    * Listar todas las propiedades
    */
-  async listar(includeDetails: boolean = true): Promise<PropiedadDTO[]> {
+  async listar(includeDetails: boolean = true, page: number = 0, size: number = 10): Promise<PropiedadDTO[]> {
     try {
-      const url = `${BASE_URL}/propiedades?includeDetails=${includeDetails}`;
+      const url = `${BASE_URL}/propiedades?includeDetails=${includeDetails}&page=${encodeURIComponent(String(page))}&size=${encodeURIComponent(String(size))}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS_GET,
@@ -76,7 +92,8 @@ export const propiedadService = {
         await handleError(response);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
       console.error('Error al listar propiedades:', error);
       throw error;
@@ -99,7 +116,8 @@ export const propiedadService = {
           await handleError(response);
         }
 
-        return await response.json();
+        const data = await response.json();
+        return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
         console.error(`Error al listar propiedades del propietario ${propietarioId}:`, error);
         throw error;

@@ -103,14 +103,19 @@ const GestionUsuarios: React.FC = () => {
         msg.toLowerCase().includes("no se pudo conectar") ||
         msg.toLowerCase().includes("failed to fetch");
 
+      const isConstraintError =
+        msg.includes("409") ||
+        msg.toLowerCase().includes("entidades asociadas") ||
+        msg.toLowerCase().includes("propiedades") ||
+        msg.toLowerCase().includes("solicitudes");
+
       const shouldFallbackToInactivar =
         !isAuthError &&
         !isNetworkError &&
+        !isConstraintError &&
         (msg.toLowerCase().includes("endpoint compatible") ||
           msg.includes("404") ||
           msg.includes("405") ||
-          msg.includes("409") ||
-          msg.includes("500") ||
           msg.includes("501") ||
           msg.includes("503") ||
           msg.toLowerCase().includes("inesperado"));
