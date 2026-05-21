@@ -65,7 +65,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -87,7 +87,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -109,7 +109,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -132,7 +132,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}/verificar-aprobados`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -175,7 +175,7 @@ export const documentoService = {
     try {
       const response = await fetch(`${BASE_URL}/documentos/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -199,7 +199,7 @@ export const estadoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/estados`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -220,7 +220,7 @@ export const estadoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/estados/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -246,7 +246,7 @@ export const tipoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -267,7 +267,7 @@ export const tipoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {

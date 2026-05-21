@@ -30,6 +30,10 @@ export const API_CONFIG = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
+
+  HEADERS_GET: {
+    'Accept': 'application/json',
+  },
 };
 
 /**

@@ -71,7 +71,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -93,7 +93,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -115,7 +115,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -137,7 +137,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -211,7 +211,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -233,7 +233,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -255,7 +255,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros/solicitud/${solicitudId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {

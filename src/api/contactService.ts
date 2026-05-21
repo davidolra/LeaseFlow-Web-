@@ -98,7 +98,7 @@ export const contactService = {
       const url = `${BASE_URL}/contacto?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -122,7 +122,7 @@ export const contactService = {
       const url = `${BASE_URL}/contacto/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -144,7 +144,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/email/${encodeURIComponent(email)}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -166,7 +166,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/usuario/${usuarioId}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -188,7 +188,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/estado/${estado}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -209,7 +209,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/sin-responder`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -231,7 +231,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/buscar?keyword=${encodeURIComponent(keyword)}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -301,7 +301,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/${id}?adminId=${adminId}`, {
         method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -320,7 +320,7 @@ export const contactService = {
     try {
       const response = await fetch(`${BASE_URL}/contacto/estadisticas`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {

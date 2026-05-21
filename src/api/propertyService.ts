@@ -69,7 +69,7 @@ export const propiedadService = {
       const url = `${BASE_URL}/propiedades?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -92,7 +92,7 @@ export const propiedadService = {
         const url = `${BASE_URL}/propiedades/usuario/${propietarioId}?includeDetails=${includeDetails}`;
         const response = await fetch(url, {
           method: 'GET',
-          headers: API_CONFIG.HEADERS,
+          headers: API_CONFIG.HEADERS_GET,
         });
 
         if (!response.ok) {
@@ -117,7 +117,7 @@ export const propiedadService = {
       const url = `${BASE_URL}/propiedades/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -138,7 +138,7 @@ export const propiedadService = {
     try {
       const response = await fetch(`${BASE_URL}/propiedades/${id}/existe`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -175,7 +175,7 @@ export const propiedadService = {
       const url = `${BASE_URL}/propiedades/buscar?${params.toString()}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -218,7 +218,7 @@ export const propiedadService = {
     try {
       const response = await fetch(`${BASE_URL}/propiedades/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -237,7 +237,7 @@ export const propiedadService = {
     try {
       const response = await fetch(`${BASE_URL}/propiedades/${propiedadId}/fotos`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -263,7 +263,7 @@ export const comunaService = {
     try {
       const response = await fetch(`${BASE_URL}/comunas`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -284,7 +284,7 @@ export const comunaService = {
     try {
       const response = await fetch(`${BASE_URL}/comunas/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -310,7 +310,7 @@ export const regionService = {
     try {
       const response = await fetch(`${BASE_URL}/regiones`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -336,7 +336,7 @@ export const tipoService = {
     try {
       const response = await fetch(`${BASE_URL}/tipos`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -362,7 +362,7 @@ export const categoriaService = {
     try {
       const response = await fetch(`${BASE_URL}/categorias`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {

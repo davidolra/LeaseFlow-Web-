@@ -138,7 +138,7 @@ export const userService = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -259,7 +259,7 @@ export const userService = {
       for (const url of candidates) {
         const response = await fetch(url, {
           method: 'DELETE',
-          headers: API_CONFIG.HEADERS,
+          headers: API_CONFIG.HEADERS_GET,
         });
 
         if (response.ok) return;
@@ -298,7 +298,7 @@ export const userService = {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}/exists`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -321,7 +321,7 @@ export const userService = {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -346,7 +346,7 @@ export const rolService = {
     try {
       const response = await fetch(`${BASE_URL}/roles`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -366,7 +366,7 @@ export const rolService = {
     try {
       const response = await fetch(`${BASE_URL}/roles/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -391,7 +391,7 @@ export const estadoUsuarioService = {
     try {
       const response = await fetch(`${BASE_URL}/estados`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
@@ -411,7 +411,7 @@ export const estadoUsuarioService = {
     try {
       const response = await fetch(`${BASE_URL}/estados/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS,
+        headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
