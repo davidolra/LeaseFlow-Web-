@@ -93,7 +93,54 @@ const GestionUsuarios: React.FC = () => {
       setUsuarios((prev) => prev.filter((u) => u.id !== id));
       setNotificacion({ variant: "success", message: `Usuario eliminado: ${email}` });
     } catch (err: any) {
-      setNotificacion({ variant: "danger", message: err?.message || "No se pudo eliminar el usuario." });
+      const msg = String(err?.message || "");
+      const isAuthError =
+        msg.toLowerCase().includes("sesión") ||
+        msg.toLowerCase().includes("permiso") ||
+        msg.includes("401") ||
+        msg.includes("403");
+      const isNetworkError =
+        msg.toLowerCase().includes("no se pudo conectar") ||
+        msg.toLowerCase().includes("failed to fetch");
+
+      const shouldFallbackToInactivar =
+        !isAuthError &&
+        !isNetworkError &&
+        (msg.toLowerCase().includes("endpoint compatible") ||
+          msg.includes("404") ||
+          msg.includes("405") ||
+          msg.includes("409") ||
+          msg.includes("500") ||
+          msg.includes("501") ||
+          msg.includes("503") ||
+          msg.toLowerCase().includes("inesperado"));
+
+      if (shouldFallbackToInactivar) {
+        const inactiveId =
+          estados.find((e) => (e.nombre || "").toUpperCase() === "INACTIVO")?.id ||
+          estados.find((e) => (e.nombre || "").toUpperCase().includes("INACT"))?.id;
+
+        if (inactiveId) {
+          try {
+            await userService.actualizarEstado(id, inactiveId);
+            setUsuarios((prev) => prev.filter((u) => u.id !== id));
+            setNotificacion({
+              variant: "success",
+              message: `No fue posible eliminar físicamente. Usuario desactivado (INACTIVO): ${email}`,
+            });
+            return;
+          } catch (fallbackErr: any) {
+            const fallbackMsg = String(fallbackErr?.message || "");
+            setNotificacion({
+              variant: "danger",
+              message: fallbackMsg || msg || "No se pudo eliminar ni desactivar el usuario.",
+            });
+            return;
+          }
+        }
+      }
+
+      setNotificacion({ variant: "danger", message: msg || "No se pudo eliminar el usuario." });
     } finally {
       setDeletingId(null);
     }
