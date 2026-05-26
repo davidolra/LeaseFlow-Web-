@@ -5,6 +5,7 @@
  */
 
 import { API_CONFIG } from '../config/apiConfig';
+import { ErrorHandlerService } from '../core/errors';
 import type {
   PropiedadDTO,
   CrearPropiedadRequest,
@@ -29,27 +30,20 @@ type PageResponse<T> = {
 
 const unwrapPage = <T>(data: unknown): T[] => {
   if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && Array.isArray((data as any).content)) {
+  if (data && typeof data === 'object' && Array.isArray((data as PageResponse<unknown>).content)) {
     return (data as PageResponse<T>).content;
   }
   return [];
 };
 
-/**
- * Manejo de errores centralizado
- */
-const handleError = async (response: Response): Promise<never> => {
-  let errorMessage = `Error ${response.status}: ${response.statusText}`;
-  
+async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
     const errorData: ErrorResponse = await response.json();
-    errorMessage = errorData.message || errorMessage;
+    return { message: errorData.message || `Error ${response.status}` };
   } catch {
-    // Si no se puede parsear el JSON, usar mensaje por defecto
+    return { message: `Error ${response.status}: ${response.statusText}` };
   }
-  
-  throw new Error(errorMessage);
-};
+}
 
 /**
  * Servicio de Propiedades
@@ -67,7 +61,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -89,7 +83,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       const data = await response.json();
@@ -113,7 +107,7 @@ export const propiedadService = {
         });
 
         if (!response.ok) {
-          await handleError(response);
+          const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
         }
 
         const data = await response.json();
@@ -139,7 +133,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -197,7 +191,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -219,7 +213,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -240,7 +234,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
     } catch (error) {
       console.error(`Error al eliminar propiedad ${id}:`, error);
@@ -259,7 +253,7 @@ export const propiedadService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -285,7 +279,7 @@ export const comunaService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -306,7 +300,7 @@ export const comunaService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -332,7 +326,7 @@ export const regionService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -358,7 +352,7 @@ export const tipoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();
@@ -384,7 +378,7 @@ export const categoriaService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
       return await response.json();

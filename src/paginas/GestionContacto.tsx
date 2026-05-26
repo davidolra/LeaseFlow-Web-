@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ROLES } from "../config/apiConfig";
-import { contactService, type MensajeContactoDTO } from "../api/contactService";
+import { contactService } from "../api/contactService";
+import type { MensajeContactoDTO } from "../types";
 
 const GestionContacto: React.FC = () => {
   const userRole = (localStorage.getItem("userRole") || "").toUpperCase();

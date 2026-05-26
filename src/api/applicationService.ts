@@ -1,10 +1,11 @@
 /**
- * Application Service API Client
+ * Application Service API Client - REFACTORED
  * Puerto: 8084
  * Gestión de solicitudes y registros de arriendo
  */
 
 import { API_CONFIG } from '../config/apiConfig';
+import { ErrorHandlerService } from '../core/errors';
 import type {
   SolicitudArriendoDTO,
   CrearSolicitudRequest,
@@ -15,35 +16,16 @@ import type {
 
 const BASE_URL = API_CONFIG.APPLICATION_SERVICE;
 
-/**
- * Manejo de errores centralizado
- */
-const handleError = async (response: Response): Promise<never> => {
-  let errorMessage = `Error ${response.status}: ${response.statusText}`;
-  
+async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
     const errorData: ErrorResponse = await response.json();
-    errorMessage = errorData.message || errorMessage;
+    return { message: errorData.message || `Error ${response.status}` };
   } catch {
-    // Si no se puede parsear el JSON, usar mensaje por defecto
+    return { message: `Error ${response.status}: ${response.statusText}` };
   }
-  
-  throw new Error(errorMessage);
-};
+}
 
-/**
- * Servicio de Solicitudes de Arriendo
- */
 export const solicitudService = {
-  /**
-   * Crear nueva solicitud de arriendo
-   * IMPORTANTE: Valida automáticamente:
-   * - Usuario existe (User Service)
-   * - Usuario tiene rol correcto
-   * - Usuario no tiene más de 3 solicitudes activas
-   * - Propiedad existe (Property Service)
-   * - Usuario tiene documentos aprobados (Document Service)
-   */
   async crear(solicitud: CrearSolicitudRequest): Promise<SolicitudArriendoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/solicitudes`, {
@@ -53,19 +35,19 @@ export const solicitudService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'crear'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al crear solicitud:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'crear');
     }
   },
 
-  /**
-   * Listar todas las solicitudes
-   */
   async listar(includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
       const url = `${BASE_URL}/solicitudes?includeDetails=${includeDetails}`;
@@ -75,19 +57,19 @@ export const solicitudService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al listar solicitudes:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
-  /**
-   * Obtener solicitud por ID
-   */
   async obtenerPorId(id: number, includeDetails: boolean = true): Promise<SolicitudArriendoDTO> {
     try {
       const url = `${BASE_URL}/solicitudes/${id}?includeDetails=${includeDetails}`;
@@ -97,19 +79,19 @@ export const solicitudService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener solicitud ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 
-  /**
-   * Obtener solicitudes de un usuario
-   */
   async obtenerPorUsuario(usuarioId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
       const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}`;
@@ -119,19 +101,19 @@ export const solicitudService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorUsuario(${usuarioId})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener solicitudes del usuario ${usuarioId}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorUsuario(${usuarioId})`);
     }
   },
 
-  /**
-   * Obtener solicitudes de una propiedad
-   */
   async obtenerPorPropiedad(propiedadId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
       const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}`;
@@ -141,49 +123,48 @@ export const solicitudService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorPropiedad(${propiedadId})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener solicitudes de la propiedad ${propiedadId}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorPropiedad(${propiedadId})`);
     }
   },
 
-  /**
-   * Actualizar estado de una solicitud
-   * Estados válidos: PENDIENTE, ACEPTADA, RECHAZADA
-   */
   async actualizarEstado(
     id: number,
     nuevoEstado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA'
   ): Promise<SolicitudArriendoDTO> {
     try {
-      const response = await fetch(`${BASE_URL}/solicitudes/${id}/estado?estado=${encodeURIComponent(nuevoEstado)}`, {
-        method: 'PATCH',
-        headers: API_CONFIG.HEADERS,
-      });
+      const response = await fetch(
+        `${BASE_URL}/solicitudes/${id}/estado?estado=${encodeURIComponent(nuevoEstado)}`,
+        {
+          method: 'PATCH',
+          headers: API_CONFIG.HEADERS,
+        }
+      );
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `actualizarEstado(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al actualizar estado de solicitud ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `actualizarEstado(${id})`);
     }
   },
 };
 
-/**
- * Servicio de Registros de Arriendo
- */
 export const registroService = {
-  /**
-   * Crear nuevo registro de arriendo
-   */
   async crear(registro: CrearRegistroRequest): Promise<RegistroArriendoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/registros`, {
@@ -193,19 +174,19 @@ export const registroService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'crear'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al crear registro:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'crear');
     }
   },
 
-  /**
-   * Listar todos los registros
-   */
   async listar(includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
     try {
       const url = `${BASE_URL}/registros?includeDetails=${includeDetails}`;
@@ -215,19 +196,19 @@ export const registroService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al listar registros:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
-  /**
-   * Obtener registro por ID
-   */
   async obtenerPorId(id: number, includeDetails: boolean = true): Promise<RegistroArriendoDTO> {
     try {
       const url = `${BASE_URL}/registros/${id}?includeDetails=${includeDetails}`;
@@ -237,19 +218,19 @@ export const registroService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener registro ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 
-  /**
-   * Obtener registros de una solicitud
-   */
   async obtenerPorSolicitud(solicitudId: number, _includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
     try {
       const url = `${BASE_URL}/registros/solicitud/${solicitudId}`;
@@ -259,19 +240,19 @@ export const registroService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorSolicitud(${solicitudId})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener registros de la solicitud ${solicitudId}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorSolicitud(${solicitudId})`);
     }
   },
 
-  /**
-   * Finalizar registro (marcar como inactivo)
-   */
   async finalizar(id: number): Promise<RegistroArriendoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/registros/${id}/finalizar`, {
@@ -280,13 +261,16 @@ export const registroService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `finalizar(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al finalizar registro ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `finalizar(${id})`);
     }
   },
 };

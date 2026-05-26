@@ -3,9 +3,8 @@
  */
 
 import { useState } from 'react';
-// ✅ Después:
-import contactService from '../api/contactService';
-import type { MensajeContactoDTO } from '../api/contactService';
+import { contactService } from '../api/contactService';
+import type { MensajeContactoDTO } from '../types';
 
 export const useContacto = () => {
   const [loading, setLoading] = useState(false);

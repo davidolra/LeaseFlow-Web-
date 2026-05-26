@@ -1,10 +1,11 @@
 /**
- * Document Service API Client
+ * Document Service API Client - REFACTORED
  * Puerto: 8083
  * Gestión de documentos de usuarios
  */
 
 import { API_CONFIG } from '../config/apiConfig';
+import { ErrorHandlerService } from '../core/errors';
 import type {
   DocumentoDTO,
   CrearDocumentoRequest,
@@ -15,29 +16,16 @@ import type {
 
 const BASE_URL = API_CONFIG.DOCUMENT_SERVICE;
 
-/**
- * Manejo de errores centralizado
- */
-const handleError = async (response: Response): Promise<never> => {
-  let errorMessage = `Error ${response.status}: ${response.statusText}`;
-  
+async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
     const errorData: ErrorResponse = await response.json();
-    errorMessage = errorData.message || errorMessage;
+    return { message: errorData.message || `Error ${response.status}` };
   } catch {
-    // Si no se puede parsear el JSON, usar mensaje por defecto
+    return { message: `Error ${response.status}: ${response.statusText}` };
   }
-  
-  throw new Error(errorMessage);
-};
+}
 
-/**
- * Servicio de Documentos
- */
 export const documentoService = {
-  /**
-   * Subir/crear nuevo documento
-   */
   async crear(documento: CrearDocumentoRequest): Promise<DocumentoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/documentos`, {
@@ -47,19 +35,19 @@ export const documentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'crear'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al crear documento:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'crear');
     }
   },
 
-  /**
-   * Listar todos los documentos
-   */
   async listar(includeDetails: boolean = false): Promise<DocumentoDTO[]> {
     try {
       const url = `${BASE_URL}/documentos?includeDetails=${includeDetails}`;
@@ -69,19 +57,19 @@ export const documentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al listar documentos:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
-  /**
-   * Obtener documento por ID
-   */
   async obtenerPorId(id: number, includeDetails: boolean = true): Promise<DocumentoDTO> {
     try {
       const url = `${BASE_URL}/documentos/${id}?includeDetails=${includeDetails}`;
@@ -91,20 +79,23 @@ export const documentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener documento ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 
-  /**
-   * Obtener documentos de un usuario específico
-   */
-  async obtenerPorUsuario(usuarioId: number, includeDetails: boolean = true): Promise<DocumentoDTO[]> {
+  async obtenerPorUsuario(
+    usuarioId: number,
+    includeDetails: boolean = true
+  ): Promise<DocumentoDTO[]> {
     try {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
@@ -113,20 +104,19 @@ export const documentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorUsuario(${usuarioId})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener documentos del usuario ${usuarioId}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorUsuario(${usuarioId})`);
     }
   },
 
-  /**
-   * Verificar si un usuario tiene documentos aprobados
-   * CRÍTICO: Este endpoint es usado por Application Service para validar solicitudes
-   */
   async verificarDocumentosAprobados(usuarioId: number): Promise<boolean> {
     try {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}/verificar-aprobados`;
@@ -140,37 +130,39 @@ export const documentoService = {
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al verificar documentos aprobados del usuario ${usuarioId}:`, error);
+    } catch (error: unknown) {
+      console.warn(
+        `Advertencia verificando documentos aprobados del usuario ${usuarioId}:`,
+        error
+      );
       return false;
     }
   },
 
-  /**
-   * Actualizar estado de un documento
-   * Ejemplo: Cambiar de PENDIENTE a ACEPTADO
-   */
   async actualizarEstado(documentoId: number, nuevoEstadoId: number): Promise<DocumentoDTO> {
     try {
-      const response = await fetch(`${BASE_URL}/documentos/${documentoId}/estado/${nuevoEstadoId}`, {
-        method: 'PATCH',
-        headers: API_CONFIG.HEADERS,
-      });
+      const response = await fetch(
+        `${BASE_URL}/documentos/${documentoId}/estado/${nuevoEstadoId}`,
+        {
+          method: 'PATCH',
+          headers: API_CONFIG.HEADERS,
+        }
+      );
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `actualizarEstado(${documentoId})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al actualizar estado del documento ${documentoId}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `actualizarEstado(${documentoId})`);
     }
   },
 
-  /**
-   * Eliminar documento
-   */
   async eliminar(id: number): Promise<void> {
     try {
       const response = await fetch(`${BASE_URL}/documentos/${id}`, {
@@ -179,22 +171,19 @@ export const documentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `eliminar(${id})`
+        );
       }
-    } catch (error) {
-      console.error(`Error al eliminar documento ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `eliminar(${id})`);
     }
   },
 };
 
-/**
- * Servicio de Estados de Documento
- */
 export const estadoDocumentoService = {
-  /**
-   * Listar todos los estados de documento
-   */
   async listar(): Promise<EstadoDocumentoDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/estados`, {
@@ -203,19 +192,19 @@ export const estadoDocumentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al listar estados de documento:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
-  /**
-   * Obtener estado por ID
-   */
   async obtenerPorId(id: number): Promise<EstadoDocumentoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/estados/${id}`, {
@@ -224,24 +213,21 @@ export const estadoDocumentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener estado ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 };
 
-/**
- * Servicio de Tipos de Documento
- */
 export const tipoDocumentoService = {
-  /**
-   * Listar todos los tipos de documento
-   */
   async listar(): Promise<TipoDocumentoDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos`, {
@@ -250,19 +236,19 @@ export const tipoDocumentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error('Error al listar tipos de documento:', error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
-  /**
-   * Obtener tipo de documento por ID
-   */
   async obtenerPorId(id: number): Promise<TipoDocumentoDTO> {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos/${id}`, {
@@ -271,13 +257,16 @@ export const tipoDocumentoService = {
       });
 
       if (!response.ok) {
-        await handleError(response);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error) {
-      console.error(`Error al obtener tipo de documento ${id}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 };

@@ -69,10 +69,6 @@ export interface CrearUsuarioRequest {
   codigoRef?: string;
 }
 
-export interface ErrorResponse {
-  message: string;
-  status: number;
-}
 // ============================================
 // PROPERTY SERVICE - TIPOS
 // ============================================
@@ -212,15 +208,22 @@ export interface CrearRegistroRequest {
 }
 
 // ============================================
-// TIPOS DE RESPUESTA DE ERROR
+// API RESPONSE TYPES
 // ============================================
 
-export interface ErrorResponse {
+export interface ApiErrorResponse {
   timestamp: string;
   status: number;
   error: string;
   message: string;
+  message_es?: string;
   validationErrors?: Record<string, string>;
+}
+
+export interface ErrorResponse {
+  message: string;
+  status?: number;
+  message_es?: string;
 }
 
 // ============================================
@@ -258,4 +261,37 @@ export interface DocumentoFilters {
   estadoId?: number;
   tipoDocId?: number;
   includeDetails?: boolean;
+}
+
+// ============================================
+// CONTACT SERVICE - TIPOS
+// ============================================
+
+export interface MensajeContactoDTO {
+  id?: number;
+  nombre: string;
+  email: string;
+  asunto: string;
+  mensaje: string;
+  numeroTelefono?: string;
+  usuarioId?: number;
+  estado?: 'PENDIENTE' | 'EN_PROCESO' | 'RESUELTO';
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
+  respuesta?: string;
+  respondidoPor?: number;
+  usuario?: UsuarioDTO;
+}
+
+export interface RespuestaMensajeDTO {
+  respuesta: string;
+  respondidoPor: number;
+  nuevoEstado?: 'PENDIENTE' | 'EN_PROCESO' | 'RESUELTO';
+}
+
+export interface EstadisticasContacto {
+  total: number;
+  pendientes: number;
+  enProceso: number;
+  resueltos: number;
 }

@@ -4,33 +4,36 @@
  */
 
 // User Service (8081)
-export { 
-  userService, 
-  rolService, 
-  estadoUsuarioService 
+export {
+  userService,
+  rolService,
+  estadoUsuarioService
 } from './userService';
 
 // Property Service (8082)
-export { 
-  propiedadService, 
-  comunaService, 
-  regionService, 
-  tipoService, 
-  categoriaService 
+export {
+  propiedadService,
+  comunaService,
+  regionService,
+  tipoService,
+  categoriaService
 } from './propertyService';
 
 // Document Service (8083)
-export { 
-  documentoService, 
-  estadoDocumentoService, 
-  tipoDocumentoService 
+export {
+  documentoService,
+  estadoDocumentoService,
+  tipoDocumentoService
 } from './documentService';
 
 // Application Service (8084)
-export { 
-  solicitudService, 
-  registroService 
+export {
+  solicitudService,
+  registroService
 } from './applicationService';
+
+// Contact Service (8085)
+export { contactService } from './contactService';
 
 // Re-export de tipos
 export type {
@@ -41,7 +44,7 @@ export type {
   LoginRequest,
   LoginResponse,
   CrearUsuarioRequest,
-  
+
   // Property Service
   PropiedadDTO,
   ComunaDTO,
@@ -51,14 +54,14 @@ export type {
   FotoDTO,
   CrearPropiedadRequest,
   PropiedadFilters,
-  
+
   // Document Service
   DocumentoDTO,
   EstadoDocumentoDTO,
   TipoDocumentoDTO,
   CrearDocumentoRequest,
   DocumentoFilters,
-  
+
   // Application Service
   SolicitudArriendoDTO,
   RegistroArriendoDTO,
@@ -66,7 +69,13 @@ export type {
   CrearRegistroRequest,
   SolicitudFilters,
   RegistroFilters,
-  
+
+  // Contact Service
+  MensajeContactoDTO,
+  RespuestaMensajeDTO,
+  EstadisticasContacto,
+
   // Shared
+  ApiErrorResponse,
   ErrorResponse,
 } from '../types';

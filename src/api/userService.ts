@@ -1,53 +1,24 @@
 /**
- * User Service API - VERSIÓN CORREGIDA
+ * User Service API - REFACTORED
  * Maneja autenticación y gestión de usuarios
- * 
- * CAMBIOS:
- * - Mejor manejo de errores de red
- * - Logs más descriptivos
- * - Validación de respuestas del backend
  */
 
 import API_CONFIG from '../config/apiConfig';
+import { ErrorHandlerService } from '../core/errors';
 import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO, CrearUsuarioRequest } from '../types';
 
 const BASE_URL = API_CONFIG.USER_SERVICE;
 
 /**
- * Manejo centralizado de errores con logs detallados
+ * Parse error response from server
  */
-const handleError = (error: any, operation: string): never => {
-  console.error(`Error en ${operation}:`, error);
-  
-  // Error de red (CORS, servidor caído, etc.)
-  if (error instanceof TypeError && error.message === 'Failed to fetch') {
-    throw new Error(
-      'No se pudo conectar con el servidor. ' +
-      'Verifica que:\n' +
-      '1. El User Service esté corriendo en http://localhost:8081\n' +
-      '2. CORS esté configurado en el backend\n' +
-      '3. No haya firewall bloqueando la conexión'
-    );
+async function parseErrorResponse(response: Response): Promise<{ message: string; validationErrors?: Record<string, string> }> {
+  try {
+    return await response.json();
+  } catch {
+    return { message: `Error ${response.status}: ${response.statusText}` };
   }
-  
-  // Error HTTP (respuesta del servidor)
-  if (error.response) {
-    const status = error.response.status;
-    const message = error.response.data?.message || `Error ${status}`;
-    throw new Error(message);
-  }
-  
-  // Error de timeout o red
-  if (error.request) {
-    throw new Error(
-      'No hubo respuesta del servidor. ' +
-      'Verifica que el User Service (puerto 8081) esté corriendo.'
-    );
-  }
-  
-  // Otros errores
-  throw new Error(error.message || 'Error desconocido');
-};
+}
 
 /**
  * Usuario Service
@@ -55,50 +26,41 @@ const handleError = (error: any, operation: string): never => {
 export const userService = {
   /**
    * Login de usuario
-   * @param credentials - Email y contraseña (campo 'clave')
-   * @returns LoginResponse con información del usuario
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       console.log('Intentando login con:', credentials.email);
-      console.log(' URL:', `${BASE_URL}/usuarios/login`);
-      
+
       const response = await fetch(`${BASE_URL}/usuarios/login`, {
         method: 'POST',
         headers: API_CONFIG.HEADERS,
         body: JSON.stringify(credentials),
       });
 
-      console.log('📥 Respuesta HTTP:', response.status, response.statusText);
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error del servidor:', errorData);
-        
+        const errorData = await parseErrorResponse(response);
         if (response.status === 401) {
-          throw new Error('Email o contraseña incorrectos');
+          throw ErrorHandlerService.handle(
+            new Error('Email o contraseña incorrectos'),
+            'login'
+          );
         }
-        
-        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'login'
+        );
       }
 
       const data: LoginResponse = await response.json();
-      console.log('✅ Login exitoso:', {
-        email: data.usuario?.email,
-        rolId: data.usuario?.rolId,
-        estadoId: data.usuario?.estadoId
-      });
-      
-      // El backend devuelve { mensaje: string, usuario: UsuarioDTO }
-      // Necesitamos convertirlo al formato esperado por el frontend
+      console.log('✅ Login exitoso');
+
       return {
         success: true,
         mensaje: data.mensaje || 'Login exitoso',
         usuario: data.usuario
       };
-    } catch (error: any) {
-      console.error('Error capturado en login:', error);
-      return handleError(error, 'login');
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'login');
     }
   },
 
@@ -108,7 +70,7 @@ export const userService = {
   async registrar(usuario: CrearUsuarioRequest): Promise<UsuarioDTO> {
     try {
       console.log('Registrando nuevo usuario:', usuario.email);
-      
+
       const response = await fetch(`${BASE_URL}/usuarios`, {
         method: 'POST',
         headers: API_CONFIG.HEADERS,
@@ -116,15 +78,18 @@ export const userService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al registrar usuario');
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          'registrar'
+        );
       }
 
       const data = await response.json();
-      console.log('Usuario registrado exitosamente:', data.id);
+      console.log('Usuario registrado exitosamente');
       return data;
-    } catch (error: any) {
-      return handleError(error, 'registrarUsuario');
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'registrar');
     }
   },
 
@@ -134,22 +99,24 @@ export const userService = {
   async obtenerPorId(id: number, includeDetails: boolean = false): Promise<UsuarioDTO> {
     try {
       const url = `${BASE_URL}/usuarios/${id}${includeDetails ? '?includeDetails=true' : ''}`;
-      console.log('Obteniendo usuario:', url);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: Usuario no encontrado`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'Usuario no encontrado' },
+          `obtenerPorId(${id})`
+        );
       }
 
       const data = await response.json();
-      console.log('Usuario obtenido:', data.email);
+      console.log('Usuario obtenido');
       return data;
-    } catch (error: any) {
-      return handleError(error, `obtenerUsuarioPorId(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 
@@ -162,13 +129,16 @@ export const userService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el usuario`);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `actualizar(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, `actualizarUsuario(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `actualizar(${id})`);
     }
   },
 
@@ -180,13 +150,16 @@ export const userService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el rol`);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `actualizarRol(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, `actualizarRol(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `actualizarRol(${id})`);
     }
   },
 
@@ -198,20 +171,22 @@ export const userService = {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo actualizar el estado`);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `actualizarEstado(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, `actualizarEstadoUsuario(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `actualizarEstado(${id})`);
     }
   },
 
   async cambiarContrasena(id: number, claveActual: string, claveNueva: string): Promise<void> {
     try {
       const payload = { claveActual, claveNueva };
-
       const candidates = [
         `${BASE_URL}/usuarios/${id}/clave`,
         `${BASE_URL}/usuarios/${id}/password`,
@@ -226,25 +201,30 @@ export const userService = {
         });
 
         if (response.ok) return;
-
         if (response.status === 404 || response.status === 405) continue;
 
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo cambiar la contraseña`);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `cambiarContrasena(${id})`
+        );
       }
 
-      const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
+      const fallbackResponse = await fetch(`${BASE_URL}/usuarios/${id}`, {
         method: 'PUT',
         headers: API_CONFIG.HEADERS,
         body: JSON.stringify({ claveActual, clave: claveNueva }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error ${response.status}: No se pudo cambiar la contraseña`);
+      if (!fallbackResponse.ok) {
+        const errorData = await parseErrorResponse(fallbackResponse);
+        throw ErrorHandlerService.handle(
+          { status: fallbackResponse.status, message: errorData.message },
+          `cambiarContrasena(${id})`
+        );
       }
-    } catch (error: any) {
-      return handleError(error, `cambiarContrasena(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `cambiarContrasena(${id})`);
     }
   },
 
@@ -263,45 +243,42 @@ export const userService = {
         });
 
         if (response.ok) return;
-
         if (response.status === 404 || response.status === 405) continue;
 
         if (response.status === 401) {
-          throw new Error("Sesión expirada. Vuelve a iniciar sesión para eliminar usuarios.");
+          throw ErrorHandlerService.handle(
+            new Error('Sesión expirada. Vuelve a iniciar sesión.'),
+            `eliminar(${id})`
+          );
         }
 
         if (response.status === 403) {
-          throw new Error("No tienes permisos para eliminar usuarios.");
+          throw ErrorHandlerService.handle(
+            new Error('No tienes permisos para eliminar usuarios.'),
+            `eliminar(${id})`
+          );
         }
 
         if (response.status === 409) {
-          throw new Error(
-            "No se puede eliminar el usuario porque tiene entidades asociadas (propiedades/solicitudes). " +
-              "Elimina primero esas dependencias y vuelve a intentar."
+          throw ErrorHandlerService.handle(
+            new Error('No se puede eliminar este usuario porque tiene entidades asociadas.'),
+            `eliminar(${id})`
           );
         }
 
-        if (response.status >= 500) {
-          throw new Error(
-            "El servidor no pudo completar la eliminación (error interno). " +
-              "Si el usuario tiene propiedades o solicitudes, elimínalas primero y vuelve a intentar."
-          );
-        }
-
-        const text = await response.text().catch(() => '');
-        let message = `Error ${response.status}: No se pudo eliminar el usuario`;
-        try {
-          const json = text ? JSON.parse(text) : null;
-          message = json?.message || json?.mensaje || message;
-        } catch {
-          if (text) message = `${message}. ${text.slice(0, 200)}`;
-        }
-        throw new Error(message);
+        const errorData = await parseErrorResponse(response);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: errorData.message },
+          `eliminar(${id})`
+        );
       }
 
-      throw new Error('No se encontró un endpoint compatible para eliminar el usuario (404/405).');
-    } catch (error: any) {
-      return handleError(error, `eliminarUsuario(${id})`);
+      throw ErrorHandlerService.handle(
+        new Error('No se encontró un endpoint compatible para eliminar el usuario.'),
+        `eliminar(${id})`
+      );
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `eliminar(${id})`);
     }
   },
 
@@ -320,8 +297,8 @@ export const userService = {
       }
 
       return await response.json();
-    } catch (error: any) {
-      console.warn(`Error verificando existencia de usuario ${id}:`, error);
+    } catch (error: unknown) {
+      console.warn(`Advertencia verificando existencia de usuario ${id}:`, error);
       return false;
     }
   },
@@ -332,19 +309,22 @@ export const userService = {
   async listar(includeDetails: boolean = false): Promise<UsuarioDTO[]> {
     try {
       const url = `${BASE_URL}/usuarios${includeDetails ? '?includeDetails=true' : ''}`;
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS_GET,
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron obtener los usuarios`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'No se pudieron obtener los usuarios' },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, 'listarUsuarios');
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 };
@@ -364,12 +344,15 @@ export const rolService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron obtener los roles`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'No se pudieron obtener los roles' },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, 'listarRoles');
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
@@ -384,12 +367,15 @@ export const rolService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: Rol no encontrado`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'Rol no encontrado' },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, `obtenerRolPorId(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 };
@@ -409,12 +395,15 @@ export const estadoUsuarioService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron obtener los estados`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'No se pudieron obtener los estados' },
+          'listar'
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, 'listarEstadosUsuario');
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, 'listar');
     }
   },
 
@@ -429,12 +418,15 @@ export const estadoUsuarioService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: Estado no encontrado`);
+        throw ErrorHandlerService.handle(
+          { status: response.status, message: 'Estado no encontrado' },
+          `obtenerPorId(${id})`
+        );
       }
 
       return await response.json();
-    } catch (error: any) {
-      return handleError(error, `obtenerEstadoPorId(${id})`);
+    } catch (error: unknown) {
+      throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
   },
 };
