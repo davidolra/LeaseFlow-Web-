@@ -74,7 +74,7 @@ export const propiedadService = {
   /**
    * Listar todas las propiedades
    */
-  async listar(includeDetails: boolean = true, page: number = 0, size: number = 10): Promise<PropiedadDTO[]> {
+  async listar(includeDetails: boolean = true, page: number = 0, size: number = 10000): Promise<PropiedadDTO[]> {
     try {
       const url = `${BASE_URL}/propiedades?includeDetails=${includeDetails}&page=${encodeURIComponent(String(page))}&size=${encodeURIComponent(String(size))}`;
       const response = await fetch(url, {
