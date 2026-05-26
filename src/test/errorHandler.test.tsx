@@ -1,8 +1,3 @@
-/**
- * Tests for ErrorHandlerService
- * Validates error classification, handling, and type guards
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   ErrorHandlerService,
