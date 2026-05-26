@@ -1,8 +1,3 @@
-/**
- * Contact Service API
- * Maneja mensajes de contacto - Puerto: 8085
- */
-
 import API_CONFIG from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {

@@ -1,9 +1,3 @@
-/**
- * Property Service API Client
- * Puerto: 8082
- * Gestión de propiedades, comunas, regiones, tipos, fotos
- */
-
 import { API_CONFIG } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {

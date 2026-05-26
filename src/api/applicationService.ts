@@ -1,9 +1,3 @@
-/**
- * Application Service API Client - REFACTORED
- * Puerto: 8084
- * Gestión de solicitudes y registros de arriendo
- */
-
 import { API_CONFIG } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {

@@ -1,8 +1,3 @@
-/**
- * User Service API - REFACTORED
- * Maneja autenticación y gestión de usuarios
- */
-
 import API_CONFIG from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO, CrearUsuarioRequest } from '../types';

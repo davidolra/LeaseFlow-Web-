@@ -1,9 +1,3 @@
-/**
- * Document Service API Client - REFACTORED
- * Puerto: 8083
- * Gestión de documentos de usuarios
- */
-
 import { API_CONFIG } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {
