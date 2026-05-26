@@ -29,13 +29,16 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock fetch globally - returns 404 by default, can be overridden per test
-globalThis.fetch = vi.fn((input: RequestInfo | URL) => {
-  const urlString = typeof input === 'string' ? input : input.toString();
-  console.warn(`Unmocked fetch call: ${urlString}`);
-  return Promise.resolve(
-    new Response(JSON.stringify({ error: 'Not mocked' }), { status: 404 })
-  );
-}) as typeof fetch;
+Object.defineProperty(globalThis, 'fetch', {
+  value: vi.fn((input: RequestInfo | URL) => {
+    const urlString = typeof input === 'string' ? input : input.toString();
+    console.warn(`Unmocked fetch call: ${urlString}`);
+    return Promise.resolve(
+      new Response(JSON.stringify({ error: 'Not mocked' }), { status: 404 })
+    );
+  }),
+  writable: true,
+});
 
 // Suppress console logs during tests
 const originalConsole = global.console;
