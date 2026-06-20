@@ -90,11 +90,11 @@ const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
             rating >= value ? "selected" : ""
           ].join(" ").trim();
 
-          return (
+            return (
             <span
               key={value}
               className={classes}
-              onClick={() => setRating(value)}
+              onClick={() => setRating(rating === value ? 0 : value)}
               onMouseEnter={() => setHover(value)}
               onMouseLeave={() => setHover(0)}
               style={{ marginRight: "5px", cursor: "pointer", fontSize: "1.5rem" }}

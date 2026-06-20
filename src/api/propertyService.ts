@@ -188,7 +188,8 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      const data = await response.json();
+      return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
       console.error('Error al buscar propiedades:', error);
       throw error;

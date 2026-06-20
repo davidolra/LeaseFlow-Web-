@@ -397,9 +397,9 @@ const fetchPropiedades = async () => {
                         </div>
                       ) : null}
                       <p className="card-text text-muted small">{propiedad.descripcion}</p>
-                      <p className="fw-bold text-success">
-                        ${propiedad.precioMensual.toLocaleString('es-CL')} {propiedad.divisa}
-                      </p>
+                <p className="fw-bold text-success">
+                  ${propiedad.precioMensual?.toLocaleString('es-CL') ?? '0'} {propiedad.divisa}
+                </p>
                       <p className="text-muted small">{propiedad.direccion}</p>
                       
                       {userRole === ROLES.ADMIN && (
