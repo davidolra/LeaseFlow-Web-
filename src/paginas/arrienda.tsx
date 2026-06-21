@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { usePropiedades, useSolicitudes, useDocumentos } from "../hooks";
 import { useLocation } from "react-router-dom";
+import { getErrorMessage } from "../core/errors";
 
 const Arrienda: React.FC = () => {
   const location = useLocation();
@@ -85,8 +86,8 @@ const Arrienda: React.FC = () => {
 
       setMensaje("¡Solicitud creada exitosamente!");
       setTipoMensaje("success");
-    } catch (err: any) {
-      const raw = (err?.message || "").toString();
+    } catch (error: unknown) {
+      const raw = getErrorMessage(error, "Error al crear solicitud");
       const msgLower = raw.toLowerCase();
 
       if (raw.includes("409") || msgLower.includes("duplicate") || msgLower.includes("ya")) {

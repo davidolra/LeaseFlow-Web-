@@ -140,43 +140,38 @@ const Contacto: React.FC = () => {
       usuarioId: usuarioId ? parseInt(usuarioId) : undefined,
     };
 
-    try {
-      setEstadoEnvio("");
+    setEstadoEnvio("");
 
-      console.log("📧 Enviando mensaje de contacto...", mensajeData);
+    console.log("📧 Enviando mensaje de contacto...", mensajeData);
 
-      // Usar el hook
-      const result = await crearMensaje(mensajeData);
+    // Usar el hook
+    const result = await crearMensaje(mensajeData);
 
-      if (result.success) {
-        console.log("✅ Mensaje enviado:", result.data);
-        setEstadoEnvio(`✅ ¡Gracias ${nombre}! Tu mensaje ha sido enviado correctamente. Te responderemos pronto.`);
+    if (result.success) {
+      console.log("✅ Mensaje enviado:", result.data);
+      setEstadoEnvio(`✅ ¡Gracias ${nombre}! Tu mensaje ha sido enviado correctamente. Te responderemos pronto.`);
 
-        // Limpiar formulario
-        setNombre("");
-        setEmail("");
-        setAsunto("");
-        setMensaje("");
-        setTelefono("");
-        setErrores({ nombre: "", email: "", asunto: "", mensaje: "", telefono: "" });
+      // Limpiar formulario
+      setNombre("");
+      setEmail("");
+      setAsunto("");
+      setMensaje("");
+      setTelefono("");
+      setErrores({ nombre: "", email: "", asunto: "", mensaje: "", telefono: "" });
+    } else {
+      console.error("❌ Error:", result.error);
+      
+      if (result.error?.includes("límite")) {
+        setEstadoEnvio(
+          "⚠️ Has alcanzado el límite de mensajes pendientes. Por favor espera respuesta a tus mensajes anteriores."
+        );
+      } else if (result.error?.includes("conectar")) {
+        setEstadoEnvio(
+          "❌ No se pudo conectar con el servidor. Verifica que el Contact Service esté corriendo en puerto 8085."
+        );
       } else {
-        console.error("❌ Error:", result.error);
-        
-        if (result.error?.includes("límite")) {
-          setEstadoEnvio(
-            "⚠️ Has alcanzado el límite de mensajes pendientes. Por favor espera respuesta a tus mensajes anteriores."
-          );
-        } else if (result.error?.includes("conectar")) {
-          setEstadoEnvio(
-            "❌ No se pudo conectar con el servidor. Verifica que el Contact Service esté corriendo en puerto 8085."
-          );
-        } else {
-          setEstadoEnvio(`❌ Error al enviar el mensaje: ${result.error}`);
-        }
+        setEstadoEnvio(`❌ Error al enviar el mensaje: ${result.error}`);
       }
-    } catch (error: any) {
-      console.error("❌ Error inesperado:", error);
-      setEstadoEnvio(`❌ Error inesperado: ${error.message}`);
     }
   };
 

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { contactService } from '../api/contactService';
+import { getErrorMessage } from '../core/errors';
 import type { MensajeContactoDTO } from '../types';
 
 export const useContacto = () => {
@@ -20,14 +21,13 @@ export const useContacto = () => {
       setError(null);
       
       const nuevoMensaje = await contactService.crearMensaje(mensaje);
-      
-      setLoading(false);
       return { success: true, data: nuevoMensaje };
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al enviar mensaje';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error al enviar mensaje');
       setError(errorMessage);
-      setLoading(false);
       return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,14 +41,13 @@ export const useContacto = () => {
       
       const data = await contactService.listarTodos(includeDetails);
       setMensajes(data);
-      
-      setLoading(false);
       return { success: true, data };
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al cargar mensajes';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error al cargar mensajes');
       setError(errorMessage);
-      setLoading(false);
       return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,14 +61,13 @@ export const useContacto = () => {
       
       const data = await contactService.listarPorUsuario(usuarioId);
       setMensajes(data);
-      
-      setLoading(false);
       return { success: true, data };
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al cargar mensajes';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Error al cargar mensajes');
       setError(errorMessage);
-      setLoading(false);
       return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../core/errors";
 import { useUsuarios } from "../hooks/useUsuarios";
 
 const Login: React.FC = () => {
@@ -64,23 +65,18 @@ const Login: React.FC = () => {
       } else {
         setErrorMessage("Credenciales inválidas");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extraer mensaje de error más específico
-      let errorMsg = "Error al conectar con el servidor";
-      
-      if (err.message) {
-        // Si el mensaje contiene información sobre validación
-        if (err.message.includes("8 caracteres")) {
-          errorMsg = "La contraseña debe tener al menos 8 caracteres";
-        } else if (err.message.includes("Failed to fetch")) {
-          errorMsg = "No se pudo conectar con el servidor. Verifica que el backend esté corriendo en puerto 8081";
-        } else if (err.message.includes("incorrectos") || err.message.includes("inválidas")) {
-          errorMsg = "Email o contraseña incorrectos";
-        } else {
-          errorMsg = err.message;
-        }
-      } else if (typeof err === 'string') {
-        errorMsg = err;
+      const rawMessage = getErrorMessage(err, "Error al conectar con el servidor");
+      let errorMsg = rawMessage;
+
+      // Si el mensaje contiene información sobre validación
+      if (rawMessage.includes("8 caracteres")) {
+        errorMsg = "La contraseña debe tener al menos 8 caracteres";
+      } else if (rawMessage.includes("Failed to fetch")) {
+        errorMsg = "No se pudo conectar con el servidor. Verifica que el backend esté corriendo en puerto 8081";
+      } else if (rawMessage.includes("incorrectos") || rawMessage.includes("inválidas")) {
+        errorMsg = "Email o contraseña incorrectos";
       }
       
       setErrorMessage(errorMsg);

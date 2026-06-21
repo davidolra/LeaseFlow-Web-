@@ -34,7 +34,7 @@ async function parseErrorResponse(response: Response): Promise<{ message: string
   try {
     const errorData: ErrorResponse = await response.json();
     return { message: errorData.message || `Error ${response.status}` };
-  } catch {
+  } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
   }
 }

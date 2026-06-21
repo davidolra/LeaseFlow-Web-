@@ -19,6 +19,7 @@ export {
 } from './AppError';
 
 export { ErrorHandlerService, classifyError } from './ErrorHandler';
+export { getErrorMessage } from './getErrorMessage';
 
 import { ErrorHandlerService } from './ErrorHandler';
 export default ErrorHandlerService;

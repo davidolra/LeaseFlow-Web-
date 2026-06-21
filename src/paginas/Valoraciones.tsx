@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_CONFIG from "../config/apiConfig";
+import { getErrorMessage } from "../core/errors";
 
 interface ValoracionesProps {
   onEnviar?: (rating: number, comentario: string) => void;
@@ -48,12 +49,12 @@ const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
       });
 
       if (!response.ok) {
-        const text = await response.text().catch(() => "");
+        const text = await response.text().catch((_error: unknown) => "");
         let message = `Error ${response.status}: No se pudo enviar la reseña`;
         try {
           const json = text ? JSON.parse(text) : null;
           message = json?.message || json?.mensaje || message;
-        } catch {
+        } catch (_error: unknown) {
           if (text) message = `${message}. ${text.slice(0, 180)}`;
         }
         throw new Error(message);
@@ -64,8 +65,8 @@ const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
       setHover(0);
       setComentario("");
       setNotificacion({ variant: "success", message: "Reseña enviada. ¡Gracias!" });
-    } catch (err: any) {
-      setNotificacion({ variant: "danger", message: err?.message || "No se pudo enviar la reseña." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo enviar la reseña.") });
     } finally {
       setSubmitting(false);
     }

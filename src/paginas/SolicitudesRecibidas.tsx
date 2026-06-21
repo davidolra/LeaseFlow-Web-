@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
+import { getErrorMessage } from "../core/errors";
 import { propiedadService, solicitudService } from "../api";
 import type { PropiedadDTO, SolicitudArriendoDTO } from "../types";
 
@@ -41,13 +42,15 @@ const SolicitudesRecibidas: React.FC = () => {
         userRole === ROLES.ADMIN ? await propiedadService.listar(true) : await propiedadService.listarPorPropietario(userId, true);
 
       const ids = (propiedades || []).map((p) => p.id);
-      const solicitudesByProp = await Promise.all(ids.map((id) => solicitudService.obtenerPorPropiedad(id, true).catch(() => [])));
+      const solicitudesByProp = await Promise.all(
+        ids.map((id) => solicitudService.obtenerPorPropiedad(id, true).catch((_error: unknown) => []))
+      );
       const merged = solicitudesByProp.flat();
       const uniq = new Map<number, SolicitudArriendoDTO>();
       merged.forEach((s) => uniq.set(s.id, s));
       setSolicitudes(Array.from(uniq.values()));
-    } catch (e: any) {
-      setError(e?.message || "No se pudieron cargar las solicitudes recibidas.");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "No se pudieron cargar las solicitudes recibidas."));
     } finally {
       setLoading(false);
     }
@@ -63,8 +66,8 @@ const SolicitudesRecibidas: React.FC = () => {
       const updated = await solicitudService.actualizarEstado(id, estado);
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setNotificacion({ variant: "success", message: `Solicitud ${estado}.` });
-    } catch (e: any) {
-      setNotificacion({ variant: "danger", message: e?.message || "No se pudo actualizar la solicitud." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo actualizar la solicitud.") });
     } finally {
       setProcessingId(null);
     }

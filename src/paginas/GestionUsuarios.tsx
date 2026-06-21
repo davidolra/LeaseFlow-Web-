@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ROLES } from "../config/apiConfig";
 import { estadoUsuarioService, rolService, userService } from "../api";
+import { getErrorMessage } from "../core/errors";
 import type { EstadoUsuarioDTO, RolDTO, UsuarioDTO } from "../types";
 
 const GestionUsuarios: React.FC = () => {
@@ -42,8 +43,8 @@ const GestionUsuarios: React.FC = () => {
       setUsuarios(Array.isArray(u) ? u : []);
       setRoles(Array.isArray(r) ? r : []);
       setEstados(Array.isArray(e) ? e : []);
-    } catch (err: any) {
-      setError(err?.message || "No se pudieron cargar los usuarios.");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "No se pudieron cargar los usuarios."));
     } finally {
       setLoading(false);
     }
@@ -65,8 +66,8 @@ const GestionUsuarios: React.FC = () => {
       const updated = await userService.actualizarRol(id, rolId);
       setUsuarios((prev) => prev.map((u) => (u.id === id ? updated : u)));
       setNotificacion({ variant: "success", message: "Rol actualizado." });
-    } catch (err: any) {
-      setNotificacion({ variant: "danger", message: err?.message || "No se pudo actualizar el rol." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo actualizar el rol.") });
     } finally {
       setUpdatingId(null);
     }
@@ -78,8 +79,8 @@ const GestionUsuarios: React.FC = () => {
       const updated = await userService.actualizarEstado(id, estadoId);
       setUsuarios((prev) => prev.map((u) => (u.id === id ? updated : u)));
       setNotificacion({ variant: "success", message: "Estado actualizado." });
-    } catch (err: any) {
-      setNotificacion({ variant: "danger", message: err?.message || "No se pudo actualizar el estado." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo actualizar el estado.") });
     } finally {
       setUpdatingId(null);
     }
@@ -92,8 +93,8 @@ const GestionUsuarios: React.FC = () => {
       await userService.eliminar(id, adminId || undefined);
       setUsuarios((prev) => prev.filter((u) => u.id !== id));
       setNotificacion({ variant: "success", message: `Usuario eliminado: ${email}` });
-    } catch (err: any) {
-      const msg = String(err?.message || "");
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error, "");
       const isAuthError =
         msg.toLowerCase().includes("sesión") ||
         msg.toLowerCase().includes("permiso") ||
@@ -134,8 +135,8 @@ const GestionUsuarios: React.FC = () => {
               message: `No fue posible eliminar físicamente. Usuario desactivado (INACTIVO): ${email}`,
             });
             return;
-          } catch (fallbackErr: any) {
-            const fallbackMsg = String(fallbackErr?.message || "");
+          } catch (fallbackError: unknown) {
+            const fallbackMsg = getErrorMessage(fallbackError, "");
             setNotificacion({
               variant: "danger",
               message: fallbackMsg || msg || "No se pudo eliminar ni desactivar el usuario.",

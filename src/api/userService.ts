@@ -10,7 +10,7 @@ const BASE_URL = API_CONFIG.USER_SERVICE;
 async function parseErrorResponse(response: Response): Promise<{ message: string; validationErrors?: Record<string, string> }> {
   try {
     return await response.json();
-  } catch {
+  } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
   }
 }

@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ROLES } from "../config/apiConfig";
 import { contactService } from "../api/contactService";
+import { getErrorMessage } from "../core/errors";
 import type { MensajeContactoDTO } from "../types";
+
+type EstadoMensaje = "" | "PENDIENTE" | "EN_PROCESO" | "RESUELTO";
+type EstadoMensajeActivo = Exclude<EstadoMensaje, "">;
 
 const GestionContacto: React.FC = () => {
   const userRole = (localStorage.getItem("userRole") || "").toUpperCase();
@@ -10,7 +14,7 @@ const GestionContacto: React.FC = () => {
   const [mensajes, setMensajes] = useState<MensajeContactoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [estadoFiltro, setEstadoFiltro] = useState<"" | "PENDIENTE" | "EN_PROCESO" | "RESUELTO">("");
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoMensaje>("");
   const [q, setQ] = useState("");
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
 
@@ -36,9 +40,10 @@ const GestionContacto: React.FC = () => {
     try {
       const data = await contactService.listarTodos(true);
       setMensajes(Array.isArray(data) ? data : []);
-    } catch (e: any) {
-      setError(e?.message || "No se pudieron cargar los mensajes.");
-      notify("danger", e?.message || "No se pudieron cargar los mensajes.");
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, "No se pudieron cargar los mensajes.");
+      setError(message);
+      notify("danger", message);
     } finally {
       setLoading(false);
     }
@@ -58,13 +63,13 @@ const GestionContacto: React.FC = () => {
     });
   }, [estadoFiltro, mensajes, q]);
 
-  const actualizarEstado = async (id: number, estado: "PENDIENTE" | "EN_PROCESO" | "RESUELTO") => {
+  const actualizarEstado = async (id: number, estado: EstadoMensajeActivo) => {
     try {
       const updated = await contactService.actualizarEstado(id, estado);
       setMensajes((prev) => prev.map((m) => (m.id === id ? updated : m)));
       notify("success", `Estado actualizado a ${estado}.`);
-    } catch (e: any) {
-      notify("danger", e?.message || "No se pudo actualizar el estado.");
+    } catch (error: unknown) {
+      notify("danger", getErrorMessage(error, "No se pudo actualizar el estado."));
     }
   };
 
@@ -80,8 +85,8 @@ const GestionContacto: React.FC = () => {
       });
       setMensajes((prev) => prev.map((m) => (m.id === id ? updated : m)));
       notify("success", "Respuesta enviada.");
-    } catch (e: any) {
-      notify("danger", e?.message || "No se pudo responder el mensaje.");
+    } catch (error: unknown) {
+      notify("danger", getErrorMessage(error, "No se pudo responder el mensaje."));
     }
   };
 
@@ -109,7 +114,7 @@ const GestionContacto: React.FC = () => {
         </div>
         <div className="col-12 col-md-3">
           <label className="form-label">Estado</label>
-          <select className="form-select" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value as any)}>
+          <select className="form-select" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value as EstadoMensaje)}>
             <option value="">Todos</option>
             <option value="PENDIENTE">Pendiente</option>
             <option value="EN_PROCESO">En proceso</option>
@@ -171,7 +176,7 @@ const GestionContacto: React.FC = () => {
                       className="form-select form-select-sm"
                       style={{ width: 160 }}
                       value={m.estado || "PENDIENTE"}
-                      onChange={(e) => actualizarEstado(Number(m.id), e.target.value as any)}
+                      onChange={(e) => actualizarEstado(Number(m.id), e.target.value as EstadoMensajeActivo)}
                       disabled={!m.id}
                     >
                       <option value="PENDIENTE">Pendiente</option>
@@ -190,4 +195,3 @@ const GestionContacto: React.FC = () => {
 };
 
 export default GestionContacto;
-

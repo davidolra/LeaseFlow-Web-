@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
+import { getErrorMessage } from "../core/errors";
 import { solicitudService } from "../api";
 import type { SolicitudArriendoDTO } from "../types";
 
@@ -39,8 +40,8 @@ const MisSolicitudes: React.FC = () => {
     try {
       const data = await solicitudService.obtenerPorUsuario(userId, true);
       setSolicitudes(Array.isArray(data) ? data : []);
-    } catch (e: any) {
-      setError(e?.message || "No se pudieron cargar tus solicitudes.");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "No se pudieron cargar tus solicitudes."));
     } finally {
       setLoading(false);
     }
@@ -57,8 +58,8 @@ const MisSolicitudes: React.FC = () => {
       const updated = await solicitudService.actualizarEstado(id, "RECHAZADA");
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setNotificacion({ variant: "success", message: "Solicitud cancelada." });
-    } catch (e: any) {
-      setNotificacion({ variant: "danger", message: e?.message || "No se pudo cancelar la solicitud." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo cancelar la solicitud.") });
     } finally {
       setProcessingId(null);
     }

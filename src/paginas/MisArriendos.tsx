@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
+import { getErrorMessage } from "../core/errors";
 import { registroService } from "../api";
 import type { RegistroArriendoDTO } from "../types";
 
@@ -32,8 +33,8 @@ const MisArriendos: React.FC = () => {
       const all = Array.isArray(data) ? data : [];
       const mine = all.filter((r) => r.solicitud?.usuarioId === userId);
       setRegistros(mine);
-    } catch (e: any) {
-      setError(e?.message || "No se pudieron cargar tus arriendos.");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "No se pudieron cargar tus arriendos."));
     } finally {
       setLoading(false);
     }
@@ -101,4 +102,3 @@ const MisArriendos: React.FC = () => {
 };
 
 export default MisArriendos;
-

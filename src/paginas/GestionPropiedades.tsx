@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { propiedadService, comunaService, tipoService, regionService } from "../api"; 
 import { ROLES } from "../config/apiConfig"; 
+import { getErrorMessage } from "../core/errors";
 import type { PropiedadDTO, CrearPropiedadRequest, ComunaDTO, TipoPropiedadDTO, RegionDTO } from "../types";
 
 
@@ -118,9 +119,9 @@ const fetchPropiedades = async () => {
 
         setPropiedades(propiedadesConImagen); 
         
-    } catch (err: any) {
-        console.error("Error al cargar propiedades del backend:", err);
-        setError("Error al cargar propiedades. Verifica que el Property Service (8082) esté activo.");
+    } catch (error: unknown) {
+        console.error("Error al cargar propiedades del backend:", error);
+        setError(getErrorMessage(error, "Error al cargar propiedades. Verifica que el Property Service (8082) esté activo."));
     } finally {
         setIsLoading(false);
     }
@@ -139,8 +140,8 @@ const fetchPropiedades = async () => {
         setRegiones(regionesData);
         setComunas(comunasData);
         setTipos(tiposData);
-    } catch (err) {
-        console.error("Error al cargar listas de Comunas/Tipos:", err);
+    } catch (error: unknown) {
+        console.error("Error al cargar listas de Comunas/Tipos:", error);
     }
   };
 
@@ -218,12 +219,12 @@ const fetchPropiedades = async () => {
       await propiedadService.eliminar(id);
       setNotificacion({ variant: "success", message: "Propiedad eliminada exitosamente." });
       fetchPropiedades();
-    } catch (err: any) {
+    } catch (error: unknown) {
       setNotificacion({
         variant: "danger",
-        message: "Error al eliminar la propiedad: " + (err?.message || "Error desconocido"),
+        message: `Error al eliminar la propiedad: ${getErrorMessage(error, "Error desconocido")}`,
       });
-      console.error("Error al eliminar:", err);
+      console.error("Error al eliminar:", error);
     } finally {
       setDeletingId(null);
     }
@@ -287,10 +288,10 @@ const fetchPropiedades = async () => {
       setNotificacion({ variant: "success", message });
       fetchPropiedades(); 
       
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error desconocido al guardar la propiedad.';
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, 'Error desconocido al guardar la propiedad.');
       setNotificacion({ variant: "danger", message: `Error al guardar la propiedad: ${errorMessage}` });
-      console.error("Error al guardar:", err);
+      console.error("Error al guardar:", error);
     }
   };
   

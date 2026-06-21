@@ -25,7 +25,7 @@ const Home: React.FC = () => {
       try {
         const [tiposData] = await Promise.all([tipoService.listar()]);
         if (!cancelled) setTipos(tiposData);
-      } catch {
+      } catch (_error: unknown) {
         if (!cancelled) setTipos([]);
       }
 
@@ -33,7 +33,7 @@ const Home: React.FC = () => {
         setFeaturedLoading(true);
         const props = await propiedadService.listar(true);
         if (!cancelled) setFeaturedProps(Array.isArray(props) ? props : []);
-      } catch {
+      } catch (_error: unknown) {
         if (!cancelled) setFeaturedProps([]);
       } finally {
         if (!cancelled) setFeaturedLoading(false);

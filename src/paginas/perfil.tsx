@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../core/errors";
 import { useUsuarios } from "../hooks/useUsuarios";
 import { useDocumentos } from "../hooks/useDocumentos";
 import { userService } from "../api/userService";
@@ -172,8 +173,8 @@ const Perfil: React.FC = () => {
       setClaveNueva("");
       setConfirmClaveNueva("");
       setNotificacion({ variant: 'success', message: "Contraseña actualizada exitosamente." });
-    } catch (err: any) {
-      setNotificacion({ variant: 'danger', message: err?.message || "No se pudo cambiar la contraseña." });
+    } catch (error: unknown) {
+      setNotificacion({ variant: 'danger', message: getErrorMessage(error, "No se pudo cambiar la contraseña.") });
     } finally {
       setCambiandoClave(false);
     }

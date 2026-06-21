@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ROLES } from "../config/apiConfig";
+import { getErrorMessage } from "../core/errors";
 import { documentoService, propiedadService, registroService, solicitudService, userService } from "../api";
 import { contactService } from "../api/contactService";
 
@@ -65,9 +66,9 @@ const AdminDashboard: React.FC = () => {
           documentos: Array.isArray(documentos) ? documentos.length : 0,
           mensajesContacto: Array.isArray(mensajes) ? mensajes.length : 0,
         });
-      } catch (e: any) {
+      } catch (error: unknown) {
         if (cancelled) return;
-        setError(e?.message || "No se pudo cargar el dashboard.");
+        setError(getErrorMessage(error, "No se pudo cargar el dashboard."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -152,4 +153,3 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
-
