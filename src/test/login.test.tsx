@@ -172,9 +172,9 @@ describe("Login Component - Microservicios", () => {
     fireEvent.click(screen.getByRole("button", { name: /iniciar sesión/i }));
 
     await waitFor(() => {
-      const alert = screen.queryByText(/no se pudo conectar/i) ||
-                   screen.queryByText(/error/i);
-      expect(alert).toBeInTheDocument();
+      expect(
+        screen.getByText(/el servidor no está disponible|no se pudo conectar|error al conectar/i)
+      ).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
