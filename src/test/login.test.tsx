@@ -149,11 +149,12 @@ describe("Login Component - Microservicios", () => {
   });
 
   it("muestra mensaje de error cuando hay un error de conexión", async () => {
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 0,
-      text: async () => "Failed to fetch",
-    });
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      new Response("Failed to fetch", {
+        status: 503,
+        statusText: "Service Unavailable",
+      })
+    );
 
     render(
       <MemoryRouter>

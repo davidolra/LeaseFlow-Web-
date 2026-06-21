@@ -28,7 +28,7 @@ describe('useSolicitudes', () => {
   });
 
   it('debe crear solicitud exitosamente', async () => {
-    const mockSolicitud = { id: 1, estado: 'PENDIENTE', propiedadId: 1, usuarioId: 1 };
+    const mockSolicitud = { id: 1, estado: 'PENDIENTE' as const, propiedadId: 1, usuarioId: 1, fechaSolicitud: '2025-01-01' };
     vi.mocked(solicitudService.crear).mockResolvedValue(mockSolicitud);
 
     const { result } = renderHook(() => useSolicitudes());
@@ -58,8 +58,8 @@ describe('useSolicitudes', () => {
 
   it('debe listar solicitudes', async () => {
     const mockSolicitudes = [
-      { id: 1, estado: 'PENDIENTE' },
-      { id: 2, estado: 'ACEPTADA' },
+      { id: 1, estado: 'PENDIENTE' as const, usuarioId: 1, propiedadId: 1, fechaSolicitud: '2025-01-01' },
+      { id: 2, estado: 'ACEPTADA' as const, usuarioId: 2, propiedadId: 2, fechaSolicitud: '2025-01-02' },
     ];
     vi.mocked(solicitudService.listar).mockResolvedValue(mockSolicitudes);
 
@@ -73,7 +73,7 @@ describe('useSolicitudes', () => {
   });
 
   it('debe aceptar solicitud', async () => {
-    const mockActualizada = { id: 1, estado: 'ACEPTADA' };
+    const mockActualizada = { id: 1, estado: 'ACEPTADA' as const, usuarioId: 1, propiedadId: 1, fechaSolicitud: '2025-01-01' };
     vi.mocked(solicitudService.actualizarEstado).mockResolvedValue(mockActualizada);
 
     const { result } = renderHook(() => useSolicitudes());
@@ -86,7 +86,7 @@ describe('useSolicitudes', () => {
   });
 
   it('debe rechazar solicitud', async () => {
-    const mockActualizada = { id: 1, estado: 'RECHAZADA' };
+    const mockActualizada = { id: 1, estado: 'RECHAZADA' as const, usuarioId: 1, propiedadId: 1, fechaSolicitud: '2025-01-01' };
     vi.mocked(solicitudService.actualizarEstado).mockResolvedValue(mockActualizada);
 
     const { result } = renderHook(() => useSolicitudes());
@@ -111,7 +111,7 @@ describe('useSolicitudes', () => {
   });
 
   it('debe obtener solicitudes por usuario', async () => {
-    const mockSolicitudes = [{ id: 1, usuarioId: 1 }];
+    const mockSolicitudes = [{ id: 1, usuarioId: 1, propiedadId: 1, estado: 'PENDIENTE' as const, fechaSolicitud: '2025-01-01' }];
     vi.mocked(solicitudService.obtenerPorUsuario).mockResolvedValue(mockSolicitudes);
 
     const { result } = renderHook(() => useSolicitudes());

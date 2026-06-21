@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import Vistas from '../paginas/Vistas';
 
@@ -23,14 +23,14 @@ describe('Vistas Component', () => {
   });
 
   it('debe renderizar el contador inicial', () => {
-    render(<Vistas propiedadId={1} />);
+    render(<Vistas />);
     const counter = document.querySelector('.vistas-counter span.number');
     expect(counter).toBeInTheDocument();
     expect(parseInt(counter?.textContent || '0')).toBeGreaterThan(0);
   });
 
   it('debe incrementar el contador con el tiempo', async () => {
-    render(<Vistas propiedadId={1} />);
+    render(<Vistas />);
     const counter = document.querySelector('.vistas-counter span.number');
     const initialCount = parseInt(counter?.textContent || '0');
     expect(initialCount).toBeGreaterThan(0);

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Login from '../../paginas/login';
+import type React from 'react';
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -83,7 +84,8 @@ describe('Aceptación: RF05 - Navegación y Catálogo', () => {
       json: async () => [],
     });
 
-    const Home = (await vi.importActual('../../paginas/home')).default;
+    const homeModule = await vi.importActual<typeof import('../../paginas/home')>('../../paginas/home');
+    const Home = homeModule.default as React.ComponentType;
     render(
       <MemoryRouter initialEntries={['/']}>
         <Home />

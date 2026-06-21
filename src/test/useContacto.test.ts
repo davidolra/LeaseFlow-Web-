@@ -70,8 +70,8 @@ describe('useContacto', () => {
 
   it('debe listar todos los mensajes', async () => {
     const mockMensajes = [
-      { id: 1, nombre: 'Juan', mensaje: 'Hola' },
-      { id: 2, nombre: 'María', mensaje: 'Buenos días' },
+      { id: 1, nombre: 'Juan', email: 'juan@email.com', asunto: 'Consulta', mensaje: 'Hola' },
+      { id: 2, nombre: 'María', email: 'maria@email.com', asunto: 'Duda', mensaje: 'Buenos días' },
     ];
     vi.mocked(contactService.listarTodos).mockResolvedValue(mockMensajes);
 
@@ -87,7 +87,7 @@ describe('useContacto', () => {
   });
 
   it('debe listar mensajes por usuario', async () => {
-    const mockMensajes = [{ id: 1, nombre: 'Juan', usuarioId: 1 }];
+    const mockMensajes = [{ id: 1, nombre: 'Juan', email: 'juan@email.com', asunto: 'Consulta', mensaje: 'Hola', usuarioId: 1 }];
     vi.mocked(contactService.listarPorUsuario).mockResolvedValue(mockMensajes);
 
     const { result } = renderHook(() => useContacto());

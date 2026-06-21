@@ -29,7 +29,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe subir documento exitosamente', async () => {
-    const mockDoc = { id: 1, nombre: 'doc.pdf', usuarioId: 1, estadoId: 1, tipoDocId: 1 };
+    const mockDoc = { id: 1, nombre: 'doc.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 1, tipoDocId: 1 };
     vi.mocked(documentoService.crear).mockResolvedValue(mockDoc);
 
     const { result } = renderHook(() => useDocumentos());
@@ -70,8 +70,8 @@ describe('useDocumentos', () => {
 
   it('debe listar documentos', async () => {
     const mockDocs = [
-      { id: 1, nombre: 'doc1.pdf' },
-      { id: 2, nombre: 'doc2.pdf' },
+      { id: 1, nombre: 'doc1.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 1, tipoDocId: 1 },
+      { id: 2, nombre: 'doc2.pdf', fechaSubido: '2025-01-02', usuarioId: 2, estadoId: 2, tipoDocId: 1 },
     ];
     vi.mocked(documentoService.listar).mockResolvedValue(mockDocs);
 
@@ -85,7 +85,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe obtener documentos por usuario', async () => {
-    const mockDocs = [{ id: 1, nombre: 'doc1.pdf', usuarioId: 1 }];
+    const mockDocs = [{ id: 1, nombre: 'doc1.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 1, tipoDocId: 1 }];
     vi.mocked(documentoService.obtenerPorUsuario).mockResolvedValue(mockDocs);
 
     const { result } = renderHook(() => useDocumentos());
@@ -110,7 +110,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe actualizar estado', async () => {
-    const mockActualizado = { id: 1, estadoId: 2 };
+    const mockActualizado = { id: 1, nombre: 'doc.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 2, tipoDocId: 1 };
     vi.mocked(documentoService.actualizarEstado).mockResolvedValue(mockActualizado);
 
     const { result } = renderHook(() => useDocumentos());
@@ -123,7 +123,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe aprobar documento', async () => {
-    const mockActualizado = { id: 1, estadoId: 2 };
+    const mockActualizado = { id: 1, nombre: 'doc.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 2, tipoDocId: 1 };
     vi.mocked(documentoService.actualizarEstado).mockResolvedValue(mockActualizado);
 
     const { result } = renderHook(() => useDocumentos());
@@ -136,7 +136,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe rechazar documento', async () => {
-    const mockActualizado = { id: 1, estadoId: 3 };
+    const mockActualizado = { id: 1, nombre: 'doc.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 3, tipoDocId: 1 };
     vi.mocked(documentoService.actualizarEstado).mockResolvedValue(mockActualizado);
 
     const { result } = renderHook(() => useDocumentos());
@@ -149,7 +149,7 @@ describe('useDocumentos', () => {
   });
 
   it('debe obtener documento por ID', async () => {
-    const mockDoc = { id: 1, nombre: 'doc.pdf' };
+    const mockDoc = { id: 1, nombre: 'doc.pdf', fechaSubido: '2025-01-01', usuarioId: 1, estadoId: 1, tipoDocId: 1 };
     vi.mocked(documentoService.obtenerPorId).mockResolvedValue(mockDoc);
 
     const { result } = renderHook(() => useDocumentos());

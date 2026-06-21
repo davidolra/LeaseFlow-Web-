@@ -13,8 +13,8 @@ describe('propertyService - Property Service', () => {
   describe('propiedadService', () => {
     it('debe listar propiedades', async () => {
       const mockProps = [
-        { id: 1, titulo: 'Casa 1', precio: 500000 },
-        { id: 2, titulo: 'Casa 2', precio: 600000 },
+        { id: 1, codigo: 'PROP-001', titulo: 'Casa 1', direccion: 'Calle 1', precioMensual: 500000, divisa: 'CLP', m2: 90, nHabit: 3, nBanos: 2, petFriendly: false, tipoId: 1, comunaId: 1 },
+        { id: 2, codigo: 'PROP-002', titulo: 'Casa 2', direccion: 'Calle 2', precioMensual: 600000, divisa: 'CLP', m2: 110, nHabit: 4, nBanos: 3, petFriendly: true, tipoId: 1, comunaId: 1 },
       ];
       // Simular respuesta paginada (Page<PropertyDTO>) y también soportar array directo
       mockFetch.mockResolvedValue({
@@ -29,7 +29,7 @@ describe('propertyService - Property Service', () => {
     });
 
     it('debe obtener propiedad por ID', async () => {
-      const mockProp = { id: 1, titulo: 'Casa Test', precio: 500000 };
+      const mockProp = { id: 1, codigo: 'PROP-001', titulo: 'Casa Test', direccion: 'Calle Test', precioMensual: 500000, divisa: 'CLP', m2: 80, nHabit: 3, nBanos: 2, petFriendly: false, tipoId: 1, comunaId: 1 };
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
@@ -42,7 +42,7 @@ describe('propertyService - Property Service', () => {
     });
 
     it('debe crear propiedad', async () => {
-      const mockCreada = { id: 1, titulo: 'Nueva Casa', precio: 500000 };
+      const mockCreada = { id: 1, codigo: 'PROP-001', titulo: 'Nueva Casa', direccion: 'Calle 1', precioMensual: 500000, divisa: 'CLP', m2: 75, nHabit: 2, nBanos: 1, petFriendly: false, tipoId: 1, comunaId: 1 };
       mockFetch.mockResolvedValue({
         ok: true,
         status: 201,
@@ -50,9 +50,15 @@ describe('propertyService - Property Service', () => {
       });
 
       const result = await propiedadService.crear({
+        codigo: 'PROP-001',
         titulo: 'Nueva Casa',
-        precio: 500000,
         direccion: 'Calle 1',
+        precioMensual: 500000,
+        divisa: 'CLP',
+        m2: 75,
+        nHabit: 2,
+        nBanos: 1,
+        petFriendly: false,
         comunaId: 1,
         tipoId: 1,
       });
@@ -61,16 +67,16 @@ describe('propertyService - Property Service', () => {
     });
 
     it('debe actualizar propiedad', async () => {
-      const mockActualizada = { id: 1, titulo: 'Casa Actualizada', precio: 550000 };
+      const mockActualizada = { id: 1, codigo: 'PROP-001', titulo: 'Casa Actualizada', direccion: 'Calle 1', precioMensual: 550000, divisa: 'CLP', m2: 90, nHabit: 3, nBanos: 2, petFriendly: false, tipoId: 1, comunaId: 1 };
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
         json: async () => mockActualizada,
       });
 
-      const result = await propiedadService.actualizar(1, { precio: 550000 });
+      const result = await propiedadService.actualizar(1, { precioMensual: 550000 });
 
-      expect(result.precio).toBe(550000);
+      expect(result.precioMensual).toBe(550000);
     });
 
     it('debe eliminar propiedad', async () => {
@@ -99,7 +105,7 @@ describe('propertyService - Property Service', () => {
       });
 
       const result = await propiedadService.buscar({
-        comuna: 'Santiago',
+        comunaId: 1,
         tipoId: 1,
       });
 
