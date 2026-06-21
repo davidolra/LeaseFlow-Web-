@@ -3,7 +3,77 @@ import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
 import { getErrorMessage } from "../core/errors";
 import { propiedadService, solicitudService } from "../api";
-import type { PropiedadDTO, SolicitudArriendoDTO } from "../types";
+import { documentoService } from "../api/documentService";
+import type { DocumentoDTO, PropiedadDTO, SolicitudArriendoDTO } from "../types";
+
+const formatDate = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("es-CL");
+};
+
+const formatDateOnly = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-CL");
+};
+
+const formatMoney = (amount?: number, currency: "CLP" | "USD" | "EUR" = "CLP") => {
+  if (amount === undefined || amount === null || Number.isNaN(amount)) return "-";
+
+  const locale = currency === "CLP" ? "es-CL" : "en-US";
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: currency === "CLP" ? 0 : 2,
+  }).format(amount);
+};
+
+const yesNo = (value?: boolean) => {
+  if (value === undefined) return "-";
+  return value ? "Si" : "No";
+};
+
+const applicantName = (solicitud: SolicitudArriendoDTO) => {
+  const usuario = solicitud.usuario;
+  if (!usuario) return `Usuario #${solicitud.usuarioId}`;
+  return [usuario.pnombre, usuario.snombre, usuario.papellido].filter(Boolean).join(" ");
+};
+
+const applicantInitials = (solicitud: SolicitudArriendoDTO) => {
+  const usuario = solicitud.usuario;
+  if (!usuario) return "U";
+  return `${usuario.pnombre?.charAt(0) || ""}${usuario.papellido?.charAt(0) || ""}`.toUpperCase() || "U";
+};
+
+const statusBadgeClass = (estado: SolicitudArriendoDTO["estado"]) => {
+  if (estado === "ACEPTADA") return "bg-success";
+  if (estado === "RECHAZADA") return "bg-danger";
+  return "bg-warning text-dark";
+};
+
+const documentStatusBadgeClass = (estadoId?: number) => {
+  if (estadoId === 2) return "bg-success";
+  if (estadoId === 3) return "bg-danger";
+  if (estadoId === 4) return "bg-info text-dark";
+  return "bg-warning text-dark";
+};
+
+const documentStatusLabel = (documento: DocumentoDTO) => {
+  if (documento.estadoNombre) return documento.estadoNombre;
+  if (documento.estadoId === 2) return "ACEPTADO";
+  if (documento.estadoId === 3) return "RECHAZADO";
+  if (documento.estadoId === 4) return "EN_REVISION";
+  return "PENDIENTE";
+};
+
+const documentTypeLabel = (documento: DocumentoDTO) => {
+  return documento.tipoDocNombre || `Tipo #${documento.tipoDocId}`;
+};
+
+const acceptedDocuments = (documentos: DocumentoDTO[]) => {
+  return documentos.filter((doc) => doc.estadoId === 2);
+};
 
 const SolicitudesRecibidas: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +85,10 @@ const SolicitudesRecibidas: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [expandedApplicantId, setExpandedApplicantId] = useState<number | null>(null);
+  const [loadingDocumentsUserId, setLoadingDocumentsUserId] = useState<number | null>(null);
+  const [documentosPorUsuario, setDocumentosPorUsuario] = useState<Record<number, DocumentoDTO[]>>({});
+  const [erroresDocumentosPorUsuario, setErroresDocumentosPorUsuario] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!notificacion) return;
@@ -60,6 +134,37 @@ const SolicitudesRecibidas: React.FC = () => {
     fetchSolicitudes();
   }, [fetchSolicitudes]);
 
+  const toggleApplicantDocuments = async (usuarioId: number) => {
+    if (expandedApplicantId === usuarioId) {
+      setExpandedApplicantId(null);
+      return;
+    }
+
+    setExpandedApplicantId(usuarioId);
+
+    if (documentosPorUsuario[usuarioId] || loadingDocumentsUserId === usuarioId) {
+      return;
+    }
+
+    try {
+      setLoadingDocumentsUserId(usuarioId);
+      setErroresDocumentosPorUsuario((prev) => {
+        const next = { ...prev };
+        delete next[usuarioId];
+        return next;
+      });
+      const documentos = await documentoService.obtenerPorUsuario(usuarioId, true);
+      setDocumentosPorUsuario((prev) => ({ ...prev, [usuarioId]: Array.isArray(documentos) ? documentos : [] }));
+    } catch (error: unknown) {
+      setErroresDocumentosPorUsuario((prev) => ({
+        ...prev,
+        [usuarioId]: getErrorMessage(error, "No se pudieron cargar los documentos del postulante."),
+      }));
+    } finally {
+      setLoadingDocumentsUserId((current) => (current === usuarioId ? null : current));
+    }
+  };
+
   const actualizar = async (id: number, estado: "ACEPTADA" | "RECHAZADA") => {
     try {
       setProcessingId(id);
@@ -104,63 +209,280 @@ const SolicitudesRecibidas: React.FC = () => {
       ) : ordenadas.length === 0 ? (
         <div className="alert alert-secondary text-center">No hay solicitudes para mostrar.</div>
       ) : (
-        <div className="table-responsive mt-4">
-          <table className="table table-hover align-middle">
-            <thead className="table-dark">
-              <tr>
-                <th>Propiedad</th>
-                <th>Solicitante</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordenadas.map((s) => (
-                <tr key={s.id}>
-                  <td>
-                    <div className="fw-semibold">{s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}</div>
-                    <div className="small text-muted">{s.propiedad?.direccion || ""}</div>
-                  </td>
-                  <td>
-                    <div className="fw-semibold">{s.usuario ? `${s.usuario.pnombre} ${s.usuario.papellido}` : `Usuario #${s.usuarioId}`}</div>
-                    <div className="small text-muted">{s.usuario?.email || ""}</div>
-                  </td>
-                  <td>
-                    <span className={`badge ${s.estado === "ACEPTADA" ? "bg-success" : s.estado === "RECHAZADA" ? "bg-danger" : "bg-warning text-dark"}`}>
-                      {s.estado}
-                    </span>
-                  </td>
-                  <td>{new Date(s.fechaSolicitud).toLocaleString()}</td>
-                  <td className="d-flex gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-success"
-                      onClick={() => actualizar(s.id, "ACEPTADA")}
-                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
-                    >
-                      {processingId === s.id ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                          Procesando...
-                        </>
+        <div className="mt-4 d-grid gap-4">
+          {ordenadas.map((s) => (
+            <div key={s.id} className="card shadow-sm border-0">
+              <div className="card-body p-4">
+                <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+                  <div>
+                    <h2 className="h5 fw-bold mb-1">
+                      {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
+                    </h2>
+                    <div className="text-muted small">Solicitud #{s.id}</div>
+                    <div className="text-muted small">
+                      Fecha de postulacion: {formatDate(s.fechaSolicitud)}
+                    </div>
+                  </div>
+                  <div className="d-flex flex-wrap gap-2 align-items-center">
+                    <span className={`badge ${statusBadgeClass(s.estado)}`}>{s.estado}</span>
+                    <span className="badge bg-secondary">Propiedad #{s.propiedadId}</span>
+                    <span className="badge bg-dark">Usuario #{s.usuarioId}</span>
+                  </div>
+                </div>
+
+                <div className="row g-4">
+                  <div className="col-12 col-xl-6">
+                    <div className="border rounded-3 h-100 p-3 bg-light-subtle">
+                      <div className="d-flex align-items-center gap-3 mb-3">
+                        <div
+                          className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
+                          style={{ width: 52, height: 52 }}
+                        >
+                          {applicantInitials(s)}
+                        </div>
+                        <div>
+                          <div className="text-uppercase small text-muted">Postulante</div>
+                          <div className="fw-semibold">{applicantName(s)}</div>
+                        </div>
+                      </div>
+
+                      <div className="row g-2 small">
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Correo</div>
+                          <div>{s.usuario?.email || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Telefono</div>
+                          <div>{s.usuario?.ntelefono || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">RUT</div>
+                          <div>{s.usuario?.rut || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Fecha de nacimiento</div>
+                          <div>{formatDateOnly(s.usuario?.fnacimiento)}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Rol</div>
+                          <div>{s.usuario?.rol?.nombre || (s.usuario?.rolId ? `Rol #${s.usuario.rolId}` : "-")}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Estado de cuenta</div>
+                          <div>{s.usuario?.estado?.nombre || (s.usuario?.estadoId ? `Estado #${s.usuario.estadoId}` : "-")}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Duoc VIP</div>
+                          <div>{yesNo(s.usuario?.duocVip)}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">LeaseflowPoints</div>
+                          <div>{s.usuario?.puntos ?? "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Codigo de referido</div>
+                          <div>{s.usuario?.codigoRef || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Registro</div>
+                          <div>{formatDateOnly(s.usuario?.fcreacion)}</div>
+                        </div>
+                        <div className="col-12">
+                          <div className="text-muted">Ultima actualizacion</div>
+                          <div>{formatDate(s.usuario?.factualizacion)}</div>
+                        </div>
+                        <div className="col-12 mt-2">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => toggleApplicantDocuments(s.usuarioId)}
+                            disabled={loadingDocumentsUserId === s.usuarioId}
+                          >
+                            {loadingDocumentsUserId === s.usuarioId
+                              ? "Cargando documentos..."
+                              : expandedApplicantId === s.usuarioId
+                                ? "Ocultar documentos"
+                                : "Ver documentos del postulante"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-xl-6">
+                    <div className="border rounded-3 h-100 p-3">
+                      <div className="text-uppercase small text-muted mb-3">Propiedad postulada</div>
+
+                      {s.propiedad?.fotos?.[0]?.url ? (
+                        <img
+                          src={s.propiedad.fotos[0].url}
+                          alt={s.propiedad.titulo}
+                          className="img-fluid rounded mb-3"
+                          style={{ width: "100%", maxHeight: 220, objectFit: "cover" }}
+                          loading="lazy"
+                        />
                       ) : (
-                        "Aceptar"
+                        <div
+                          className="rounded d-flex align-items-center justify-content-center bg-light text-muted mb-3"
+                          style={{ width: "100%", minHeight: 160 }}
+                        >
+                          Sin imagen disponible
+                        </div>
                       )}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      onClick={() => actualizar(s.id, "RECHAZADA")}
-                      disabled={s.estado !== "PENDIENTE" || processingId === s.id}
-                    >
-                      {processingId === s.id ? "Procesando..." : "Rechazar"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+                      <div className="row g-2 small">
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Titulo</div>
+                          <div className="fw-semibold">
+                            {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
+                          </div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Codigo</div>
+                          <div>{s.propiedad?.codigo || "-"}</div>
+                        </div>
+                        <div className="col-12">
+                          <div className="text-muted">Direccion</div>
+                          <div>{s.propiedad?.direccion || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Comuna</div>
+                          <div>{s.propiedad?.comuna?.nombre || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Tipo</div>
+                          <div>{s.propiedad?.tipo?.nombre || (s.propiedad?.tipoId ? `Tipo #${s.propiedad.tipoId}` : "-")}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Precio</div>
+                          <div>{formatMoney(s.propiedad?.precioMensual, s.propiedad?.divisa || "CLP")}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Estado de la propiedad</div>
+                          <div>{s.propiedad?.estadoPropiedad || "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-4">
+                          <div className="text-muted">m2</div>
+                          <div>{s.propiedad?.m2 ?? "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-4">
+                          <div className="text-muted">Habitaciones</div>
+                          <div>{s.propiedad?.nHabit ?? "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-4">
+                          <div className="text-muted">Banos</div>
+                          <div>{s.propiedad?.nBanos ?? "-"}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Pet friendly</div>
+                          <div>{yesNo(s.propiedad?.petFriendly)}</div>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted">Creacion</div>
+                          <div>{formatDateOnly(s.propiedad?.fcreacion)}</div>
+                        </div>
+                        <div className="col-12">
+                          <div className="text-muted">Descripcion</div>
+                          <div>{s.propiedad?.descripcion || "-"}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {expandedApplicantId === s.usuarioId ? (
+                  <div className="mt-4 pt-3 border-top">
+                    <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                      <div>
+                        <div className="fw-semibold">Documentos aceptados del postulante</div>
+                        <div className="small text-muted">{applicantName(s)}</div>
+                      </div>
+                      <span className="badge bg-secondary">
+                        {acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).length} documento(s)
+                      </span>
+                    </div>
+
+                    {loadingDocumentsUserId === s.usuarioId ? (
+                      <div className="text-center py-3">
+                        <div className="spinner-border spinner-border-sm text-primary" role="status" />
+                        <p className="small text-muted mb-0 mt-2">Cargando documentos del postulante...</p>
+                      </div>
+                    ) : erroresDocumentosPorUsuario[s.usuarioId] ? (
+                      <div className="alert alert-danger mb-0">
+                        {erroresDocumentosPorUsuario[s.usuarioId]}
+                      </div>
+                    ) : acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).length === 0 ? (
+                      <div className="alert alert-secondary mb-0">
+                        Este postulante no tiene documentos aceptados.
+                      </div>
+                    ) : (
+                      <div className="row g-3">
+                        {acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).map((doc) => (
+                          <div key={doc.id} className="col-12 col-lg-6">
+                            <div className="border rounded-3 p-3 h-100 bg-light">
+                              <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                  <div className="fw-semibold">{documentTypeLabel(doc)}</div>
+                                  <div className="small text-muted">{doc.nombre}</div>
+                                </div>
+                                <span className={`badge ${documentStatusBadgeClass(doc.estadoId)}`}>
+                                  {documentStatusLabel(doc)}
+                                </span>
+                              </div>
+                              <div className="row g-2 small">
+                                <div className="col-12 col-md-6">
+                                  <div className="text-muted">Documento ID</div>
+                                  <div>{doc.id}</div>
+                                </div>
+                                <div className="col-12 col-md-6">
+                                  <div className="text-muted">Usuario ID</div>
+                                  <div>{doc.usuarioId}</div>
+                                </div>
+                                <div className="col-12 col-md-6">
+                                  <div className="text-muted">Subido el</div>
+                                  <div>{formatDate(doc.fechaSubido)}</div>
+                                </div>
+                                <div className="col-12 col-md-6">
+                                  <div className="text-muted">Estado</div>
+                                  <div>{documentStatusLabel(doc)}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={() => actualizar(s.id, "ACEPTADA")}
+                    disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                  >
+                    {processingId === s.id ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                        Procesando...
+                      </>
+                    ) : (
+                      "Aceptar postulante"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => actualizar(s.id, "RECHAZADA")}
+                    disabled={s.estado !== "PENDIENTE" || processingId === s.id}
+                  >
+                    {processingId === s.id ? "Procesando..." : "Rechazar postulante"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
