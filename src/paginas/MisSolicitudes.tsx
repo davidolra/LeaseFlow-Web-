@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
 import { getErrorMessage } from "../core/errors";
-import { mapSolicitudesApiToUI } from "../mappers/solicitudes";
 import { solicitudService } from "../api";
 import type { SolicitudArriendoDTO } from "../types";
 
@@ -67,9 +66,7 @@ const MisSolicitudes: React.FC = () => {
   };
 
   const solicitudesOrdenadas = useMemo(() => {
-    return mapSolicitudesApiToUI(solicitudes).sort(
-      (a, b) => b.fechaSolicitudTimestamp - a.fechaSolicitudTimestamp
-    );
+    return [...solicitudes].sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
   }, [solicitudes]);
 
   if (userRole !== ROLES.ARRIENDATARIO && userRole !== ROLES.ADMIN) {
@@ -113,8 +110,8 @@ const MisSolicitudes: React.FC = () => {
               {solicitudesOrdenadas.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <div className="fw-semibold">{s.tituloPropiedad}</div>
-                    <div className="small text-muted">{s.direccionPropiedad}</div>
+                    <div className="fw-semibold">{s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}</div>
+                    <div className="small text-muted">{s.propiedad?.direccion || ""}</div>
                   </td>
                   <td>
                     <span className={`badge ${s.estado === "ACEPTADA" ? "bg-success" : s.estado === "RECHAZADA" ? "bg-danger" : "bg-warning text-dark"}`}>

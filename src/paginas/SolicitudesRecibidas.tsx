@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
 import { getErrorMessage } from "../core/errors";
-import { mapSolicitudesApiToUI } from "../mappers/solicitudes";
 import { propiedadService, solicitudService } from "../api";
 import { documentoService } from "../api/documentService";
-import type { DocumentoDTO, PropiedadDTO, SolicitudArriendoDTO } from "../types";
+import { userService } from "../api/userService";
+import type { DocumentoDTO, PropiedadDTO, SolicitudArriendoDTO, UsuarioDTO } from "../types";
 
 const formatDate = (value?: string) => {
   if (!value) return "-";
@@ -33,6 +33,16 @@ const formatMoney = (amount?: number, currency: "CLP" | "USD" | "EUR" = "CLP") =
 const yesNo = (value?: boolean) => {
   if (value === undefined) return "-";
   return value ? "Si" : "No";
+};
+
+const applicantNameFromUser = (usuarioId: number, usuario?: UsuarioDTO) => {
+  if (!usuario) return `Usuario #${usuarioId}`;
+  return [usuario.pnombre, usuario.snombre, usuario.papellido].filter(Boolean).join(" ");
+};
+
+const applicantInitialsFromUser = (usuario?: UsuarioDTO) => {
+  if (!usuario) return "U";
+  return `${usuario.pnombre?.charAt(0) || ""}${usuario.papellido?.charAt(0) || ""}`.toUpperCase() || "U";
 };
 
 const statusBadgeClass = (estado: SolicitudArriendoDTO["estado"]) => {
@@ -78,6 +88,7 @@ const SolicitudesRecibidas: React.FC = () => {
   const [loadingDocumentsUserId, setLoadingDocumentsUserId] = useState<number | null>(null);
   const [documentosPorUsuario, setDocumentosPorUsuario] = useState<Record<number, DocumentoDTO[]>>({});
   const [erroresDocumentosPorUsuario, setErroresDocumentosPorUsuario] = useState<Record<number, string>>({});
+  const [usuariosPorId, setUsuariosPorId] = useState<Record<number, UsuarioDTO>>({});
 
   useEffect(() => {
     if (!notificacion) return;
@@ -104,14 +115,54 @@ const SolicitudesRecibidas: React.FC = () => {
       const propiedades: PropiedadDTO[] =
         userRole === ROLES.ADMIN ? await propiedadService.listar(true) : await propiedadService.listarPorPropietario(userId, true);
 
-      const ids = (propiedades || []).map((p) => p.id);
-      const solicitudesByProp = await Promise.all(
-        ids.map((id) => solicitudService.obtenerPorPropiedad(id, true).catch((_error: unknown) => []))
-      );
-      const merged = solicitudesByProp.flat();
+      const propiedadIds = new Set<number>((propiedades || []).map((p) => p.id));
+      const propiedadPorId = new Map<number, PropiedadDTO>();
+      (propiedades || []).forEach((p) => propiedadPorId.set(p.id, p));
+
+      const allSolicitudes = await solicitudService.listar(true);
+      const merged = (allSolicitudes || []).filter((s) => propiedadIds.has(s.propiedadId));
+
       const uniq = new Map<number, SolicitudArriendoDTO>();
-      merged.forEach((s) => uniq.set(s.id, s));
-      setSolicitudes(Array.from(uniq.values()));
+      merged.forEach((s) => {
+        const prop = propiedadPorId.get(s.propiedadId);
+        uniq.set(s.id, { ...s, propiedad: prop || s.propiedad });
+      });
+
+      const finalSolicitudes = Array.from(uniq.values());
+      setSolicitudes(finalSolicitudes);
+
+      const missingUserIds = Array.from(
+        new Set(
+          finalSolicitudes
+            .filter((s) => {
+              return !s.usuario || !s.usuario.email;
+            })
+            .map((s) => s.usuarioId)
+        )
+      );
+
+      if (missingUserIds.length > 0) {
+        const results = await Promise.all(
+          missingUserIds.map(async (id) => {
+            try {
+              const usuario = await userService.obtenerPorId(id, true);
+              return { id, usuario };
+            } catch (_error: unknown) {
+              return null;
+            }
+          })
+        );
+
+        const next: Record<number, UsuarioDTO> = {};
+        results.forEach((r) => {
+          if (!r) return;
+          next[r.id] = r.usuario;
+        });
+
+        if (Object.keys(next).length > 0) {
+          setUsuariosPorId((prev) => ({ ...prev, ...next }));
+        }
+      }
     } catch (error: unknown) {
       setError(getErrorMessage(error, "No se pudieron cargar las solicitudes recibidas."));
     } finally {
@@ -168,9 +219,7 @@ const SolicitudesRecibidas: React.FC = () => {
   };
 
   const ordenadas = useMemo(() => {
-    return mapSolicitudesApiToUI(solicitudes).sort(
-      (a, b) => b.fechaSolicitudTimestamp - a.fechaSolicitudTimestamp
-    );
+    return [...solicitudes].sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
   }, [solicitudes]);
 
   if (userRole !== ROLES.PROPIETARIO && userRole !== ROLES.ADMIN) {
@@ -201,13 +250,29 @@ const SolicitudesRecibidas: React.FC = () => {
         <div className="alert alert-secondary text-center">No hay solicitudes para mostrar.</div>
       ) : (
         <div className="mt-4 d-grid gap-4">
-          {ordenadas.map((s) => (
-            <div key={s.id} className="card shadow-sm border-0">
+          {ordenadas.map((s) => {
+            const usuario = usuariosPorId[s.usuarioId] || s.usuario;
+            const nombreUsuario = applicantNameFromUser(s.usuarioId, usuario);
+            const inicialesUsuario = applicantInitialsFromUser(usuario);
+            const correoUsuario = usuario?.email || "-";
+            const telefonoUsuario = usuario?.ntelefono || "-";
+            const rutUsuario = usuario?.rut || "-";
+            const fechaNacimientoUsuario = formatDateOnly(usuario?.fnacimiento);
+            const rolUsuario = usuario?.rol?.nombre || (usuario?.rolId ? `Rol #${usuario.rolId}` : "-");
+            const estadoUsuario = usuario?.estado?.nombre || (usuario?.estadoId ? `Estado #${usuario.estadoId}` : "-");
+            const duocVipUsuario = yesNo(usuario?.duocVip);
+            const puntosUsuario = usuario?.puntos ?? "-";
+            const codigoRefUsuario = usuario?.codigoRef || "-";
+            const registroUsuario = formatDateOnly(usuario?.fcreacion);
+            const actualizacionUsuario = formatDate(usuario?.factualizacion);
+
+            return (
+              <div key={s.id} className="card shadow-sm border-0">
               <div className="card-body p-4">
                 <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
                   <div>
                     <h2 className="h5 fw-bold mb-1">
-                      {s.tituloPropiedad}
+                      {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
                     </h2>
                     <div className="text-muted small">Solicitud #{s.id}</div>
                     <div className="text-muted small">
@@ -229,58 +294,58 @@ const SolicitudesRecibidas: React.FC = () => {
                           className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
                           style={{ width: 52, height: 52 }}
                         >
-                          {s.inicialesSolicitante}
+                          {inicialesUsuario}
                         </div>
                         <div>
                           <div className="text-uppercase small text-muted">Postulante</div>
-                          <div className="fw-semibold">{s.nombreSolicitante}</div>
+                          <div className="fw-semibold">{nombreUsuario}</div>
                         </div>
                       </div>
 
                       <div className="row g-2 small">
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Correo</div>
-                          <div>{s.emailSolicitante || "-"}</div>
+                          <div>{correoUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Telefono</div>
-                          <div>{s.telefonoSolicitante || "-"}</div>
+                          <div>{telefonoUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">RUT</div>
-                          <div>{s.rutSolicitante || "-"}</div>
+                          <div>{rutUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Fecha de nacimiento</div>
-                          <div>{formatDateOnly(s.source.usuario?.fnacimiento)}</div>
+                          <div>{fechaNacimientoUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Rol</div>
-                          <div>{s.rolSolicitante || "-"}</div>
+                          <div>{rolUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Estado de cuenta</div>
-                          <div>{s.estadoCuentaSolicitante || "-"}</div>
+                          <div>{estadoUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Duoc VIP</div>
-                          <div>{yesNo(s.duocVipSolicitante)}</div>
+                          <div>{duocVipUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">LeaseflowPoints</div>
-                          <div>{s.puntosSolicitante ?? "-"}</div>
+                          <div>{puntosUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Codigo de referido</div>
-                          <div>{s.codigoRefSolicitante || "-"}</div>
+                          <div>{codigoRefUsuario}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Registro</div>
-                          <div>{formatDateOnly(s.fechaRegistroSolicitante)}</div>
+                          <div>{registroUsuario}</div>
                         </div>
                         <div className="col-12">
                           <div className="text-muted">Ultima actualizacion</div>
-                          <div>{formatDate(s.fechaActualizacionSolicitante)}</div>
+                          <div>{actualizacionUsuario}</div>
                         </div>
                         <div className="col-12 mt-2">
                           <button
@@ -304,10 +369,10 @@ const SolicitudesRecibidas: React.FC = () => {
                     <div className="border rounded-3 h-100 p-3">
                       <div className="text-uppercase small text-muted mb-3">Propiedad postulada</div>
 
-                      {s.fotoUrl ? (
+                      {s.propiedad?.fotos?.[0]?.url ? (
                         <img
-                          src={s.fotoUrl}
-                          alt={s.tituloPropiedad}
+                          src={s.propiedad.fotos[0].url}
+                          alt={s.propiedad.titulo}
                           className="img-fluid rounded mb-3"
                           style={{ width: "100%", maxHeight: 220, objectFit: "cover" }}
                           loading="lazy"
@@ -324,55 +389,57 @@ const SolicitudesRecibidas: React.FC = () => {
                       <div className="row g-2 small">
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Titulo</div>
-                          <div className="fw-semibold">{s.tituloPropiedad}</div>
+                          <div className="fw-semibold">
+                            {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
+                          </div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Codigo</div>
-                          <div>{s.codigoPropiedad || "-"}</div>
+                          <div>{s.propiedad?.codigo || "-"}</div>
                         </div>
                         <div className="col-12">
                           <div className="text-muted">Direccion</div>
-                          <div>{s.direccionPropiedad || "-"}</div>
+                          <div>{s.propiedad?.direccion || "-"}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Comuna</div>
-                          <div>{s.comunaPropiedad || "-"}</div>
+                          <div>{s.propiedad?.comuna?.nombre || "-"}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Tipo</div>
-                          <div>{s.tipoPropiedad || "-"}</div>
+                          <div>{s.propiedad?.tipo?.nombre || (s.propiedad?.tipoId ? `Tipo #${s.propiedad.tipoId}` : "-")}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Precio</div>
-                          <div>{formatMoney(s.precioMensual ?? undefined, s.divisaPropiedad)}</div>
+                          <div>{formatMoney(s.propiedad?.precioMensual, s.propiedad?.divisa || "CLP")}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Estado de la propiedad</div>
-                          <div>{s.estadoPropiedad || "-"}</div>
+                          <div>{s.propiedad?.estadoPropiedad || "-"}</div>
                         </div>
                         <div className="col-12 col-md-4">
                           <div className="text-muted">m2</div>
-                          <div>{s.m2 ?? "-"}</div>
+                          <div>{s.propiedad?.m2 ?? "-"}</div>
                         </div>
                         <div className="col-12 col-md-4">
                           <div className="text-muted">Habitaciones</div>
-                          <div>{s.nHabit ?? "-"}</div>
+                          <div>{s.propiedad?.nHabit ?? "-"}</div>
                         </div>
                         <div className="col-12 col-md-4">
                           <div className="text-muted">Banos</div>
-                          <div>{s.nBanos ?? "-"}</div>
+                          <div>{s.propiedad?.nBanos ?? "-"}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Pet friendly</div>
-                          <div>{yesNo(s.petFriendly)}</div>
+                          <div>{yesNo(s.propiedad?.petFriendly)}</div>
                         </div>
                         <div className="col-12 col-md-6">
                           <div className="text-muted">Creacion</div>
-                          <div>{formatDateOnly(s.fechaCreacionPropiedad)}</div>
+                          <div>{formatDateOnly(s.propiedad?.fcreacion)}</div>
                         </div>
                         <div className="col-12">
                           <div className="text-muted">Descripcion</div>
-                          <div>{s.descripcionPropiedad || "-"}</div>
+                          <div>{s.propiedad?.descripcion || "-"}</div>
                         </div>
                       </div>
                     </div>
@@ -384,7 +451,7 @@ const SolicitudesRecibidas: React.FC = () => {
                     <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
                       <div>
                         <div className="fw-semibold">Documentos aceptados del postulante</div>
-                        <div className="small text-muted">{s.nombreSolicitante}</div>
+                        <div className="small text-muted">{nombreUsuario}</div>
                       </div>
                       <span className="badge bg-secondary">
                         {acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).length} documento(s)
@@ -471,7 +538,8 @@ const SolicitudesRecibidas: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
