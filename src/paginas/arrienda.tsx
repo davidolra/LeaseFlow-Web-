@@ -90,7 +90,9 @@ const Arrienda: React.FC = () => {
       const raw = getErrorMessage(error, "Error al crear solicitud");
       const msgLower = raw.toLowerCase();
 
-      if (raw.includes("409") || msgLower.includes("duplicate") || msgLower.includes("ya")) {
+      if (msgLower.includes("máximo") || msgLower.includes("maximo") || msgLower.includes("solicitudes activas")) {
+        setMensaje("Has alcanzado el límite máximo de solicitudes activas (3). Espera a que alguna sea respondida.");
+      } else if (raw.includes("409") || msgLower.includes("duplicate") || msgLower.includes("ya")) {
         setMensaje("Ya tienes una postulación activa para esta propiedad.");
       } else if (msgLower.includes("documento") && msgLower.includes("aprob")) {
         setMensaje("Debes tener al menos un documento aprobado para postular.");
