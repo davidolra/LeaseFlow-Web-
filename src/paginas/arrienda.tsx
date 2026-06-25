@@ -78,29 +78,29 @@ const Arrienda: React.FC = () => {
         return;
       }
 
-      // Crear solicitud
-      await crearSolicitud({
-        usuarioId: userId,
-        propiedadId: propiedadId,
+      // Crear solicitud — fetch directo para preservar el mensaje exacto del backend
+      const apiMod = await import("../config/apiConfig");
+      const res = await fetch(`${apiMod.API_CONFIG.APPLICATION_SERVICE}/solicitudes`, {
+        method: "POST",
+        headers: apiMod.getAuthHeaders(true),
+        body: JSON.stringify({ usuarioId: userId, propiedadId }),
       });
+
+      if (!res.ok) {
+        let backendMsg = "Error al crear solicitud";
+        try {
+          const json = await res.json();
+          backendMsg = json?.message || backendMsg;
+        } catch (_e) { /* ignorar */ }
+        setMensaje(backendMsg);
+        setTipoMensaje("error");
+        return;
+      }
 
       setMensaje("¡Solicitud creada exitosamente!");
       setTipoMensaje("success");
     } catch (error: unknown) {
-      const raw = getErrorMessage(error, "Error al crear solicitud");
-      const msgLower = raw.toLowerCase();
-
-      if (msgLower.includes("máximo") || msgLower.includes("maximo") || msgLower.includes("solicitudes activas")) {
-        setMensaje("Has alcanzado el límite máximo de solicitudes activas (3). Espera a que alguna sea respondida.");
-      } else if (raw.includes("409") || msgLower.includes("duplicate") || msgLower.includes("ya")) {
-        setMensaje("Ya tienes una postulación activa para esta propiedad.");
-      } else if (msgLower.includes("documento") && msgLower.includes("aprob")) {
-        setMensaje("Debes tener al menos un documento aprobado para postular.");
-      } else if (raw) {
-        setMensaje(raw);
-      } else {
-        setMensaje("Error al crear solicitud");
-      }
+      setMensaje(getErrorMessage(error, "Error al crear solicitud"));
       setTipoMensaje("error");
     } finally {
       setLoadingId(null);
