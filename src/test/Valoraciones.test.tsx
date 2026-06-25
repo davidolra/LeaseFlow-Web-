@@ -90,7 +90,7 @@ describe('Valoraciones - Alto Impacto', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(`${API_CONFIG.REVIEW_SERVICE}/reviews`, expect.objectContaining({
           method: 'POST',
-          body: expect.stringContaining('"rating":4'),
+          body: expect.stringContaining('"puntaje":4'),
         }));
       });
       await waitFor(() => expect(screen.getByText(/reseña enviada/i)).toBeInTheDocument());
