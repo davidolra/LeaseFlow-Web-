@@ -14,6 +14,11 @@ const DEV_PROXY_BASES = {
   REVIEW_SERVICE: '/reviewservice/api',
 } as const;
 
+// API Key compartida con los 6 microservicios.
+// En desarrollo: definir en .env como VITE_APP_CLIENT_KEY=rentify-leaseflow-dev-key-2026
+// En Azure App Service: configurar en Configuration → Application Settings con el mismo nombre.
+const APP_CLIENT_KEY = import.meta.env.VITE_APP_CLIENT_KEY ?? 'rentify-leaseflow-dev-key-2026';
+
 export const API_CONFIG = {
   APPLICATION_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.APPLICATION_SERVICE : 'https://applicationservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
   USER_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.USER_SERVICE : 'https://userservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
@@ -23,16 +28,18 @@ export const API_CONFIG = {
   REVIEW_SERVICE: import.meta.env.DEV ? DEV_PROXY_BASES.REVIEW_SERVICE : 'https://reviewservice.calmbeach-1addaf50.brazilsouth.azurecontainerapps.io/api',
   
   // Timeouts (en milisegundos)
-  TIMEOUT: 10000, // 10 segundos
+  TIMEOUT: 15000, // 15 segundos
   
-  // Headers por defecto
+  // Headers por defecto — incluye X-App-Client para pasar el ApiKeyInterceptor de los microservicios
   HEADERS: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'X-App-Client': APP_CLIENT_KEY,
   },
 
   HEADERS_GET: {
     'Accept': 'application/json',
+    'X-App-Client': APP_CLIENT_KEY,
   },
 };
 
