@@ -97,6 +97,13 @@ export const documentoService = {
         headers: getAuthHeaders(),
       });
 
+      // FIX: El backend retorna 404 cuando el usuario no tiene documentos.
+      // Tratamos 404 como lista vacía en vez de lanzar excepción,
+      // para que perfil.tsx pueda cargar normalmente sin documentos subidos.
+      if (response.status === 404) {
+        return [];
+      }
+
       if (!response.ok) {
         const errorData = await parseErrorResponse(response);
         throw ErrorHandlerService.handle(

@@ -137,7 +137,7 @@ const Contacto: React.FC = () => {
       asunto: asunto.trim(),
       mensaje: mensaje.trim(),
       numeroTelefono: telefono.trim() || undefined,
-      usuarioId: usuarioId ? parseInt(usuarioId) : undefined,
+      usuarioId: usuarioId ? parseInt(usuarioId, 10) : null,
     };
 
     setEstadoEnvio("");

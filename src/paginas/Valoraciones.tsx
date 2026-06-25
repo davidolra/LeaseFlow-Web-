@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAuthHeaders } from "../config/apiConfig";
 import API_CONFIG from "../config/apiConfig";
 import { getErrorMessage } from "../core/errors";
 
 interface ValoracionesProps {
   onEnviar?: (rating: number, comentario: string) => void;
 }
+
+// ID del tipo de reseña por defecto (RESENA_PROPIEDAD).
+// Ajusta este valor si en tu BD el ID es diferente.
+const TIPO_RESENA_PROPIEDAD_ID = 1;
 
 const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
   const navigate = useNavigate();
@@ -36,15 +41,17 @@ const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
 
     try {
       setSubmitting(true);
+      // Campo correcto: "puntaje" (no "rating"), y tipoResenaId es @NotNull en ReviewDTO
       const payload = {
         usuarioId: userId,
-        rating,
-        comentario: comentario.trim(),
+        puntaje: rating,              // ← corregido: era "rating", debe ser "puntaje"
+        comentario: comentario.trim() || undefined,
+        tipoResenaId: TIPO_RESENA_PROPIEDAD_ID, // ← agregado: @NotNull en ReviewDTO
       };
 
       const response = await fetch(`${API_CONFIG.REVIEW_SERVICE}/reviews`, {
         method: "POST",
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true), // ← corregido: incluye X-Usuario-Id, X-Rol-Id y Content-Type
         body: JSON.stringify(payload),
       });
 
@@ -91,7 +98,7 @@ const Valoraciones: React.FC<ValoracionesProps> = ({ onEnviar }) => {
             rating >= value ? "selected" : ""
           ].join(" ").trim();
 
-            return (
+          return (
             <span
               key={value}
               className={classes}
