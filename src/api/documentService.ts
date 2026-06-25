@@ -1,4 +1,4 @@
-import { API_CONFIG } from '../config/apiConfig';
+import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {
   DocumentoDTO,
@@ -24,7 +24,7 @@ export const documentoService = {
     try {
       const response = await fetch(`${BASE_URL}/documentos`, {
         method: 'POST',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true),
         body: JSON.stringify(documento),
       });
 
@@ -47,7 +47,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -69,7 +69,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -94,7 +94,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -116,7 +116,7 @@ export const documentoService = {
       const url = `${BASE_URL}/documentos/usuario/${usuarioId}/verificar-aprobados`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -139,7 +139,7 @@ export const documentoService = {
         `${BASE_URL}/documentos/${documentoId}/estado/${nuevoEstadoId}`,
         {
           method: 'PATCH',
-          headers: API_CONFIG.HEADERS,
+          headers: getAuthHeaders(true),
         }
       );
 
@@ -161,7 +161,7 @@ export const documentoService = {
     try {
       const response = await fetch(`${BASE_URL}/documentos/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -182,7 +182,7 @@ export const estadoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/estados`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -203,7 +203,7 @@ export const estadoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/estados/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -226,7 +226,7 @@ export const tipoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -247,7 +247,7 @@ export const tipoDocumentoService = {
     try {
       const response = await fetch(`${BASE_URL}/tipos-documentos/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

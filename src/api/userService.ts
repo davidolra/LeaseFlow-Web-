@@ -1,4 +1,4 @@
-import API_CONFIG from '../config/apiConfig';
+import API_CONFIG, { getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO, CrearUsuarioRequest } from '../types';
 
@@ -20,7 +20,7 @@ async function parseErrorResponse(response: Response): Promise<{ message: string
  */
 export const userService = {
   /**
-   * Login de usuario
+   * Login de usuario — PÚBLICO, no requiere X-Usuario-Id ni X-Rol-Id
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
@@ -60,7 +60,7 @@ export const userService = {
   },
 
   /**
-   * Registrar nuevo usuario
+   * Registrar nuevo usuario — PÚBLICO, no requiere headers de auth
    */
   async registrar(usuario: CrearUsuarioRequest): Promise<UsuarioDTO> {
     try {
@@ -89,7 +89,7 @@ export const userService = {
   },
 
   /**
-   * Obtener usuario por ID
+   * Obtener usuario por ID — PROTEGIDO, requiere X-Usuario-Id y X-Rol-Id
    */
   async obtenerPorId(id: number, includeDetails: boolean = false): Promise<UsuarioDTO> {
     try {
@@ -97,7 +97,7 @@ export const userService = {
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -119,7 +119,7 @@ export const userService = {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
         method: 'PUT',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true),
         body: JSON.stringify(datos),
       });
 
@@ -141,7 +141,7 @@ export const userService = {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}/rol?rolId=${encodeURIComponent(String(rolId))}`, {
         method: 'PATCH',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -162,7 +162,7 @@ export const userService = {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}/estado?estadoId=${encodeURIComponent(String(estadoId))}`, {
         method: 'PATCH',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -191,7 +191,7 @@ export const userService = {
       for (const url of candidates) {
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: API_CONFIG.HEADERS,
+          headers: getAuthHeaders(true),
           body: JSON.stringify(payload),
         });
 
@@ -207,7 +207,7 @@ export const userService = {
 
       const fallbackResponse = await fetch(`${BASE_URL}/usuarios/${id}`, {
         method: 'PUT',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true),
         body: JSON.stringify({ claveActual, clave: claveNueva }),
       });
 
@@ -234,7 +234,7 @@ export const userService = {
       for (const url of candidates) {
         const response = await fetch(url, {
           method: 'DELETE',
-          headers: API_CONFIG.HEADERS_GET,
+          headers: getAuthHeaders(),
         });
 
         if (response.ok) return;
@@ -278,13 +278,13 @@ export const userService = {
   },
 
   /**
-   * Verificar si existe un usuario por ID
+   * Verificar si existe un usuario por ID — PROTEGIDO
    */
   async existe(id: number): Promise<boolean> {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}/exists`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -299,7 +299,7 @@ export const userService = {
   },
 
   /**
-   * Listar todos los usuarios
+   * Listar todos los usuarios — PROTEGIDO (solo Admin)
    */
   async listar(includeDetails: boolean = false): Promise<UsuarioDTO[]> {
     try {
@@ -307,7 +307,7 @@ export const userService = {
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -325,17 +325,14 @@ export const userService = {
 };
 
 /**
- * Servicio de Roles
+ * Servicio de Roles — PROTEGIDO
  */
 export const rolService = {
-  /**
-   * Listar todos los roles
-   */
   async listar(): Promise<RolDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/roles`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -351,14 +348,11 @@ export const rolService = {
     }
   },
 
-  /**
-   * Obtener rol por ID
-   */
   async obtenerPorId(id: number): Promise<RolDTO> {
     try {
       const response = await fetch(`${BASE_URL}/roles/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -376,17 +370,14 @@ export const rolService = {
 };
 
 /**
- * Servicio de Estados de Usuario
+ * Servicio de Estados de Usuario — PROTEGIDO
  */
 export const estadoUsuarioService = {
-  /**
-   * Listar todos los estados
-   */
   async listar(): Promise<EstadoUsuarioDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/estados`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -402,14 +393,11 @@ export const estadoUsuarioService = {
     }
   },
 
-  /**
-   * Obtener estado por ID
-   */
   async obtenerPorId(id: number): Promise<EstadoUsuarioDTO> {
     try {
       const response = await fetch(`${BASE_URL}/estados/${id}`, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

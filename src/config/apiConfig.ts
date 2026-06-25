@@ -83,4 +83,31 @@ export const TIPOS_DOCUMENTO = {
   CONTRATO_TRABAJO: 'CONTRATO_TRABAJO',
 } as const;
 
+/**
+ * Construye headers con X-Usuario-Id y X-Rol-Id leyendo desde localStorage.
+ * Requeridos por los controladores Java protegidos.
+ */
+export function getAuthHeaders(includeContentType: boolean = false): Record<string, string> {
+  const userId = localStorage.getItem('userId');
+  const userRole = localStorage.getItem('userRole');
+
+  const rolIdMap: Record<string, string> = {
+    'ADMIN': '1',
+    'PROPIETARIO': '2',
+    'ARRIENDATARIO': '3',
+  };
+  const rolId = userRole ? (rolIdMap[userRole] ?? '3') : '3';
+
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    'X-App-Client': APP_CLIENT_KEY,
+  };
+
+  if (userId) headers['X-Usuario-Id'] = userId;
+  if (rolId) headers['X-Rol-Id'] = rolId;
+  if (includeContentType) headers['Content-Type'] = 'application/json';
+
+  return headers;
+}
+
 export default API_CONFIG;

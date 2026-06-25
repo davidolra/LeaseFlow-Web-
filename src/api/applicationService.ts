@@ -1,4 +1,4 @@
-import { API_CONFIG } from '../config/apiConfig';
+import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {
   SolicitudArriendoDTO,
@@ -47,7 +47,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -69,7 +69,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -91,7 +91,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -113,7 +113,7 @@ export const solicitudService = {
       const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -139,7 +139,7 @@ export const solicitudService = {
         `${BASE_URL}/solicitudes/${id}/estado?estado=${encodeURIComponent(nuevoEstado)}`,
         {
           method: 'PATCH',
-          headers: API_CONFIG.HEADERS,
+          headers: getAuthHeaders(),
         }
       );
 
@@ -186,7 +186,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -208,7 +208,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros/${id}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -230,7 +230,7 @@ export const registroService = {
       const url = `${BASE_URL}/registros/solicitud/${solicitudId}`;
       const response = await fetch(url, {
         method: 'GET',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -251,7 +251,7 @@ export const registroService = {
     try {
       const response = await fetch(`${BASE_URL}/registros/${id}/finalizar`, {
         method: 'PATCH',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

@@ -1,4 +1,4 @@
-import { API_CONFIG } from '../config/apiConfig';
+import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
 import type {
   PropiedadDTO,
@@ -44,13 +44,13 @@ async function parseErrorResponse(response: Response): Promise<{ message: string
  */
 export const propiedadService = {
   /**
-   * Crear nueva propiedad
+   * Crear nueva propiedad — PROTEGIDO, requiere X-Usuario-Id y X-Rol-Id
    */
   async crear(propiedad: CrearPropiedadRequest): Promise<PropiedadDTO> {
     try {
       const response = await fetch(`${BASE_URL}/propiedades`, {
         method: 'POST',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true),
         body: JSON.stringify(propiedad),
       });
 
@@ -66,7 +66,7 @@ export const propiedadService = {
   },
 
   /**
-   * Listar todas las propiedades
+   * Listar todas las propiedades — PÚBLICO
    */
   async listar(includeDetails: boolean = true, page: number = 0, size: number = 10000): Promise<PropiedadDTO[]> {
     try {
@@ -89,34 +89,30 @@ export const propiedadService = {
   },
 
   /**
-   * Listar propiedades por ID de propietario (NUEVA FUNCIÓN)
-   */
-  async listarPorPropietario(propietarioId: number, includeDetails: boolean = true): Promise<PropiedadDTO[]> {
-    try {
-        // Asumiendo que el endpoint de tu backend es: /propiedades/usuario/{id}
-        const url = `${BASE_URL}/propiedades/usuario/${propietarioId}?includeDetails=${includeDetails}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: API_CONFIG.HEADERS_GET,
-        });
+   * Listar propiedades por ID de propietario — PÚBLICO
+   */
+  async listarPorPropietario(propietarioId: number, includeDetails: boolean = true): Promise<PropiedadDTO[]> {
+    try {
+        const url = `${BASE_URL}/propiedades/usuario/${propietarioId}?includeDetails=${includeDetails}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: API_CONFIG.HEADERS_GET,
+        });
 
-        if (!response.ok) {
-          const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
-        }
+        if (!response.ok) {
+          const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
+        }
 
-        const data = await response.json();
-        return unwrapPage<PropiedadDTO>(data);
-    } catch (error) {
-        console.error(`Error al listar propiedades del propietario ${propietarioId}:`, error);
-        throw error;
-    }
-  },
-
-
-  
+        const data = await response.json();
+        return unwrapPage<PropiedadDTO>(data);
+    } catch (error) {
+        console.error(`Error al listar propiedades del propietario ${propietarioId}:`, error);
+        throw error;
+    }
+  },
 
   /**
-   * Obtener propiedad por ID
+   * Obtener propiedad por ID — PÚBLICO
    */
   async obtenerPorId(id: number, includeDetails: boolean = true): Promise<PropiedadDTO> {
     try {
@@ -138,7 +134,7 @@ export const propiedadService = {
   },
 
   /**
-   * Verificar si una propiedad existe
+   * Verificar si una propiedad existe — PÚBLICO
    */
   async existe(id: number): Promise<boolean> {
     try {
@@ -159,7 +155,7 @@ export const propiedadService = {
   },
 
   /**
-   * Buscar propiedades con filtros
+   * Buscar propiedades con filtros — PÚBLICO
    */
   async buscar(filtros: PropiedadFilters): Promise<PropiedadDTO[]> {
     try {
@@ -197,13 +193,13 @@ export const propiedadService = {
   },
 
   /**
-   * Actualizar propiedad
+   * Actualizar propiedad — PROTEGIDO, requiere X-Usuario-Id y X-Rol-Id
    */
   async actualizar(id: number, propiedad: Partial<PropiedadDTO>): Promise<PropiedadDTO> {
     try {
       const response = await fetch(`${BASE_URL}/propiedades/${id}`, {
         method: 'PUT',
-        headers: API_CONFIG.HEADERS,
+        headers: getAuthHeaders(true),
         body: JSON.stringify(propiedad),
       });
 
@@ -219,13 +215,13 @@ export const propiedadService = {
   },
 
   /**
-   * Eliminar propiedad
+   * Eliminar propiedad — PROTEGIDO, requiere X-Usuario-Id y X-Rol-Id
    */
   async eliminar(id: number): Promise<void> {
     try {
       const response = await fetch(`${BASE_URL}/propiedades/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.HEADERS_GET,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -238,7 +234,7 @@ export const propiedadService = {
   },
 
   /**
-   * Obtener fotos de una propiedad
+   * Obtener fotos de una propiedad — PÚBLICO
    */
   async obtenerFotos(propiedadId: number): Promise<FotoDTO[]> {
     try {
@@ -260,12 +256,9 @@ export const propiedadService = {
 };
 
 /**
- * Servicio de Comunas
+ * Servicio de Comunas — Lectura PÚBLICA
  */
 export const comunaService = {
-  /**
-   * Listar todas las comunas
-   */
   async listar(): Promise<ComunaDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/comunas`, {
@@ -284,9 +277,6 @@ export const comunaService = {
     }
   },
 
-  /**
-   * Obtener comuna por ID
-   */
   async obtenerPorId(id: number): Promise<ComunaDTO> {
     try {
       const response = await fetch(`${BASE_URL}/comunas/${id}`, {
@@ -307,12 +297,9 @@ export const comunaService = {
 };
 
 /**
- * Servicio de Regiones
+ * Servicio de Regiones — Lectura PÚBLICA
  */
 export const regionService = {
-  /**
-   * Listar todas las regiones
-   */
   async listar(): Promise<RegionDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/regiones`, {
@@ -333,12 +320,9 @@ export const regionService = {
 };
 
 /**
- * Servicio de Tipos de Propiedad
+ * Servicio de Tipos de Propiedad — Lectura PÚBLICA
  */
 export const tipoService = {
-  /**
-   * Listar todos los tipos
-   */
   async listar(): Promise<TipoPropiedadDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/tipos`, {
@@ -359,12 +343,9 @@ export const tipoService = {
 };
 
 /**
- * Servicio de Categorías
+ * Servicio de Categorías — Lectura PÚBLICA
  */
 export const categoriaService = {
-  /**
-   * Listar todas las categorías
-   */
   async listar(): Promise<CategoriaDTO[]> {
     try {
       const response = await fetch(`${BASE_URL}/categorias`, {

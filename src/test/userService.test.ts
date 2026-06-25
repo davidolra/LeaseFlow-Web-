@@ -33,11 +33,11 @@ describe('userService - Servicios de Usuario', () => {
         expect.stringContaining('/usuarios/login'),
         expect.objectContaining({
           method: 'POST',
-          headers: {
+          headers: expect.objectContaining({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-App-Client': expect.any(String), // ✅ Agregado: acepta la clave sin hardcodearla
-          },
+            'X-App-Client': expect.any(String),
+          }),
           body: JSON.stringify({ email: 'juan@email.com', clave: 'pass123' }),
         })
       );
@@ -183,10 +183,10 @@ describe('userService - Servicios de Usuario', () => {
         expect.stringContaining('/usuarios/1'),
         expect.objectContaining({
           method: 'DELETE',
-          headers: {
+          headers: expect.objectContaining({
             'Accept': 'application/json',
-            'X-App-Client': expect.any(String), // ✅ Agregado: acepta la clave sin hardcodearla
-          },
+            'X-App-Client': expect.any(String),
+          }),
         })
       );
     });
