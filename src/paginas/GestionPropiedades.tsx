@@ -184,7 +184,7 @@ const fetchPropiedades = async () => {
 
     setPropiedadActual({
       ...INITIAL_PROPIEDAD_STATE,
-      codigo: `AUTO-${Date.now()}`,
+      codigo: `P-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,  // máx 10 chars
       propietarioId: userId ? Number(userId) : 0,
       propietarioEmail: userEmail,
       tipoId: tipos.length > 0 ? tipos[0].id : 0,
@@ -195,7 +195,7 @@ const fetchPropiedades = async () => {
   };
 
   const handleEditarPropiedad = (propiedad: Propiedad) => {
-    if (userRole !== ROLES.ADMIN && propiedad.propietarioEmail !== userEmail) {
+    if (userRole !== ROLES.ADMIN && propiedad.propietarioId !== Number(userId)) {
       setNotificacion({ variant: "danger", message: "No tienes permisos para editar esta propiedad." });
       return;
     }
@@ -209,7 +209,7 @@ const fetchPropiedades = async () => {
   const handleEliminarPropiedad = async (id: number) => {
     const propiedad = propiedades.find(p => p.id === id);
     
-    if (userRole !== ROLES.ADMIN && propiedad?.propietarioEmail !== userEmail) {
+    if (userRole !== ROLES.ADMIN && propiedad?.propietarioId !== Number(userId)) {
       setNotificacion({ variant: "danger", message: "No tienes permisos para eliminar esta propiedad." });
       return;
     }
@@ -410,7 +410,7 @@ const fetchPropiedades = async () => {
                       )}
 
                       <div className="mt-auto d-flex gap-2">
-                        {(userRole === ROLES.ADMIN || (userRole === ROLES.PROPIETARIO && propiedad.propietarioEmail === userEmail)) && (
+                        {(userRole === ROLES.ADMIN || (userRole === ROLES.PROPIETARIO && propiedad.propietarioId === Number(userId))) && (
                             <>
                                 <button 
                                   className="btn btn-primary btn-sm flex-fill"

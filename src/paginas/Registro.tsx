@@ -233,6 +233,13 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
       const usuarioCreado = await userService.registrar(nuevoUsuario);
       console.log("Usuario creado exitosamente:", usuarioCreado);
 
+      // 4a. Guardar sesión ANTES de subir documentos para que getAuthHeaders()
+      //     pueda leer userId/userRole al hacer las llamadas a documentService
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", usuarioCreado.email);
+      localStorage.setItem("userId", usuarioCreado.id.toString());
+      localStorage.setItem("userRole", rol);
+
       // 4. Subir documentos
       const documentosSubidos = [];
       for (const [, doc] of Object.entries(documentos)) {
@@ -255,13 +262,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
 
       console.log(`Total documentos subidos: ${documentosSubidos.length}`);
 
-      // 5. Guardar sesión
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("userEmail", usuarioCreado.email);
-      localStorage.setItem("userId", usuarioCreado.id.toString());
-      localStorage.setItem("userRole", rol);
-
-      // 6. Mostrar mensaje de éxito (toast global)
+      // 5. Mostrar mensaje de éxito (toast global)
       navigate("/", {
         state: {
           flash: {
