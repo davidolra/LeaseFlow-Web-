@@ -4,10 +4,23 @@ import { userService } from "../api/userService";
 import { documentoService } from "../api/documentService";
 import type { CrearUsuarioRequest, CrearDocumentoRequest } from "../types";
 
-// Definimos los tipos de rol para tener un código más limpio y tipado.
+// ─── Constante: largo máximo del campo `nombre` en documentService ───────────
+// Si la columna en BD es VARCHAR(50), este valor debe ser ≤ 50.
+// Ajústalo si el backend usa otro límite.
+const MAX_NOMBRE_DOC = 100;
+
+/** Trunca el nombre del archivo a MAX_NOMBRE_DOC caracteres conservando la extensión */
+function truncarNombreArchivo(nombreOriginal: string): string {
+  if (nombreOriginal.length <= MAX_NOMBRE_DOC) return nombreOriginal;
+  const lastDot = nombreOriginal.lastIndexOf(".");
+  if (lastDot === -1) return nombreOriginal.slice(0, MAX_NOMBRE_DOC);
+  const ext = nombreOriginal.slice(lastDot);           // ej: ".pdf"
+  const maxBase = MAX_NOMBRE_DOC - ext.length;
+  return nombreOriginal.slice(0, maxBase) + ext;
+}
+
 type Rol = "PROPIETARIO" | "ARRIENDATARIO" | "";
 
-// Tipo para los archivos de documentos
 interface DocumentoArchivo {
   nombre: string;
   archivo: File | null;
@@ -17,9 +30,12 @@ interface DocumentoArchivo {
 
 type RegistroMode = "register" | "upload";
 
-const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }> = ({ onRegisterSuccess, mode = "register" }) => {
+const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }> = ({
+  onRegisterSuccess,
+  mode = "register",
+}) => {
   const isUploadOnly = mode === "upload";
-  // Estados para datos personales
+
   const [pnombre, setPnombre] = useState("");
   const [snombre, setSnombre] = useState("");
   const [papellido, setPapellido] = useState("");
@@ -31,25 +47,25 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rol, setRol] = useState<Rol>("");
   const [codigoRef, setCodigoRef] = useState("");
-  
+
   const initialDocumentos: Record<string, DocumentoArchivo> = {
-    dni: { nombre: "DNI / Cédula de Identidad", archivo: null, tipoDocId: 1, requerido: !isUploadOnly },
-    pasaporte: { nombre: "Pasaporte", archivo: null, tipoDocId: 2, requerido: false },
-    liquidacion: { nombre: "Liquidación de Sueldo", archivo: null, tipoDocId: 3, requerido: !isUploadOnly },
-    antecedentes: { nombre: "Certificado de Antecedentes", archivo: null, tipoDocId: 4, requerido: !isUploadOnly },
-    afp: { nombre: "Certificado AFP", archivo: null, tipoDocId: 5, requerido: !isUploadOnly },
-    contrato: { nombre: "Contrato de Trabajo", archivo: null, tipoDocId: 6, requerido: false },
+    dni:          { nombre: "DNI / Cédula de Identidad",      archivo: null, tipoDocId: 1, requerido: !isUploadOnly },
+    pasaporte:    { nombre: "Pasaporte",                       archivo: null, tipoDocId: 2, requerido: false },
+    liquidacion:  { nombre: "Liquidación de Sueldo",           archivo: null, tipoDocId: 3, requerido: !isUploadOnly },
+    antecedentes: { nombre: "Certificado de Antecedentes",     archivo: null, tipoDocId: 4, requerido: !isUploadOnly },
+    afp:          { nombre: "Certificado AFP",                 archivo: null, tipoDocId: 5, requerido: !isUploadOnly },
+    contrato:     { nombre: "Contrato de Trabajo",             archivo: null, tipoDocId: 6, requerido: false },
   };
 
-  // Estados para documentos
   const [documentos, setDocumentos] = useState<Record<string, DocumentoArchivo>>(initialDocumentos);
-
-  // Estados para UI
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(isUploadOnly ? 2 : 1); // 1: Datos personales, 2: Documentos
+  const [currentStep, setCurrentStep] = useState(isUploadOnly ? 2 : 1);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
-  
+  const [notificacion, setNotificacion] = useState<{
+    variant: "success" | "danger";
+    message: string;
+  } | null>(null);
+
   const navigate = useNavigate();
 
   const currentUserId = useMemo(() => {
@@ -57,84 +73,56 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
     return id ? Number(id) : null;
   }, []);
 
-  // Validación del paso 1 (datos personales)
+  // ── Validaciones ─────────────────────────────────────────────────────────────
+
   const validateStep1 = (): boolean => {
     if (isUploadOnly) return true;
     const newErrors: Record<string, string> = {};
 
-    if (!pnombre.trim()) {
-      newErrors.pnombre = "El primer nombre es obligatorio";
-    } else if (pnombre.length < 2) {
-      newErrors.pnombre = "El nombre debe tener al menos 2 caracteres";
-    }
+    if (!pnombre.trim()) newErrors.pnombre = "El primer nombre es obligatorio";
+    else if (pnombre.length < 2) newErrors.pnombre = "El nombre debe tener al menos 2 caracteres";
 
-    if (!papellido.trim()) {
-      newErrors.papellido = "El apellido es obligatorio";
-    } else if (papellido.length < 2) {
-      newErrors.papellido = "El apellido debe tener al menos 2 caracteres";
-    }
+    if (!papellido.trim()) newErrors.papellido = "El apellido es obligatorio";
+    else if (papellido.length < 2) newErrors.papellido = "El apellido debe tener al menos 2 caracteres";
 
-    if (!rut.trim()) {
-      newErrors.rut = "El RUT es obligatorio";
-    } else if (!/^\d{7,8}-[\dkK]$/.test(rut)) {
-      newErrors.rut = "Formato de RUT inválido (ej: 12345678-9)";
-    }
+    if (!rut.trim()) newErrors.rut = "El RUT es obligatorio";
+    else if (!/^\d{7,8}-[\dkK]$/.test(rut)) newErrors.rut = "Formato de RUT inválido (ej: 12345678-9)";
 
-    if (!email.trim()) {
-      newErrors.email = "El correo es obligatorio";
-    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-      newErrors.email = "Formato de correo inválido";
-    }
+    if (!email.trim()) newErrors.email = "El correo es obligatorio";
+    else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) newErrors.email = "Formato de correo inválido";
 
-    if (!ntelefono.trim()) {
-      newErrors.ntelefono = "El teléfono es obligatorio";
-    } else if (!/^\+?569\d{8}$/.test(ntelefono.replace(/\s/g, ""))) {
+    if (!ntelefono.trim()) newErrors.ntelefono = "El teléfono es obligatorio";
+    else if (!/^\+?569\d{8}$/.test(ntelefono.replace(/\s/g, "")))
       newErrors.ntelefono = "Formato de teléfono inválido (ej: +56912345678)";
-    }
 
-    if (!fnacimiento) {
-      newErrors.fnacimiento = "La fecha de nacimiento es obligatoria";
-    } else {
+    if (!fnacimiento) newErrors.fnacimiento = "La fecha de nacimiento es obligatoria";
+    else {
       const birthDate = new Date(fnacimiento);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 18) {
-        newErrors.fnacimiento = "Debes ser mayor de 18 años para registrarte";
-      }
+      if (age < 18) newErrors.fnacimiento = "Debes ser mayor de 18 años para registrarte";
     }
 
-    if (!password) {
-      newErrors.password = "La contraseña es obligatoria";
-    } else if (password.length < 8) {
-      newErrors.password = "La contraseña debe tener al menos 8 caracteres";
-    }
+    if (!password) newErrors.password = "La contraseña es obligatoria";
+    else if (password.length < 8) newErrors.password = "La contraseña debe tener al menos 8 caracteres";
 
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Las contraseñas no coinciden";
-    }
+    if (password !== confirmPassword) newErrors.confirmPassword = "Las contraseñas no coinciden";
 
-    if (!rol) {
-      newErrors.rol = "Debe seleccionar un tipo de cuenta";
-    }
+    if (!rol) newErrors.rol = "Debe seleccionar un tipo de cuenta";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Validación del paso 2 (documentos)
   const validateStep2 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (isUploadOnly) {
       const anySelected = Object.values(documentos).some((d) => Boolean(d.archivo));
-      if (!anySelected) {
-        newErrors._form = "Selecciona al menos un archivo para enviar.";
-      }
+      if (!anySelected) newErrors._form = "Selecciona al menos un archivo para enviar.";
     } else {
       Object.entries(documentos).forEach(([key, doc]) => {
-        if (doc.requerido && !doc.archivo) {
-          newErrors[key] = `${doc.nombre} es obligatorio`;
-        }
+        if (doc.requerido && !doc.archivo) newErrors[key] = `${doc.nombre} es obligatorio`;
       });
     }
 
@@ -142,23 +130,19 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
     return Object.keys(newErrors).length === 0;
   };
 
-  // Manejar cambio de archivo
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
   const handleFileChange = (key: string, file: File | null) => {
-    setDocumentos(prev => ({
-      ...prev,
-      [key]: { ...prev[key], archivo: file }
-    }));
-    // Limpiar error si existe
+    setDocumentos((prev) => ({ ...prev, [key]: { ...prev[key], archivo: file } }));
     if (errors[key]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[key];
-        return newErrors;
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
       });
     }
   };
 
-  // Navegar al siguiente paso
   const handleNextStep = () => {
     if (validateStep1()) {
       setCurrentStep(2);
@@ -166,119 +150,141 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
     }
   };
 
-  // Volver al paso anterior
   const handlePreviousStep = () => {
     setCurrentStep(1);
     window.scrollTo(0, 0);
   };
 
-  // Enviar formulario completo
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Sube los documentos seleccionados para un userId dado.
+   * Retorna { subidos, errores } para que el llamador decida qué hacer.
+   */
+  const subirDocumentos = async (
+    userId: number
+  ): Promise<{ subidos: number; errores: string[] }> => {
+    const errores: string[] = [];
+    let subidos = 0;
 
-    if (!validateStep2()) {
-      return;
+    for (const [key, doc] of Object.entries(documentos)) {
+      if (!doc.archivo) continue;
+
+      // FIX: truncar nombre para respetar el límite del campo en BD
+      const nombreTruncado = truncarNombreArchivo(doc.archivo.name);
+
+      const documentoRequest: CrearDocumentoRequest = {
+        nombre: nombreTruncado,
+        usuarioId: userId,
+        estadoId: 1, // PENDIENTE
+        tipoDocId: doc.tipoDocId,
+      };
+
+      try {
+        await documentoService.crear(documentoRequest);
+        subidos++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Error desconocido";
+        errores.push(`${doc.nombre}: ${msg}`);
+        console.error(`Error subiendo ${doc.nombre}:`, err);
+      }
     }
 
+    return { subidos, errores };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateStep2()) return;
+
     setLoading(true);
-    
+
     try {
+      // ── MODO SOLO SUBIDA (desde perfil / re-subida) ───────────────────────
       if (isUploadOnly) {
+        // FIX: verificar sesión activa; si no hay userId redirigir a login
         if (localStorage.getItem("isLoggedIn") !== "true" || !currentUserId) {
-          navigate("/login", { state: { flash: { variant: "danger", message: "Debes iniciar sesión para subir documentos." } } });
+          navigate("/login", {
+            state: {
+              flash: { variant: "danger", message: "Debes iniciar sesión para subir documentos." },
+            },
+          });
           return;
         }
 
-        const documentosSubidos = [];
-        for (const [, doc] of Object.entries(documentos)) {
-          if (doc.archivo) {
-            const documentoRequest: CrearDocumentoRequest = {
-              nombre: doc.archivo.name,
-              usuarioId: currentUserId,
-              estadoId: 1,
-              tipoDocId: doc.tipoDocId,
-            };
-            const documentoCreado = await documentoService.crear(documentoRequest);
-            documentosSubidos.push(documentoCreado);
-          }
+        const { subidos, errores } = await subirDocumentos(currentUserId);
+
+        if (errores.length > 0 && subidos === 0) {
+          // Todos fallaron
+          setNotificacion({
+            variant: "danger",
+            message: `No se pudo subir ningún documento. ${errores.join(" | ")}`,
+          });
+          return;
         }
 
-        navigate("/perfil", { state: { flash: { variant: "success", message: "Documentos enviados a revisión." } } });
+        // Éxito parcial o total — navegar a perfil con flash apropiado
+        navigate("/perfil", {
+          state: {
+            flash: {
+              variant: errores.length === 0 ? "success" : "warning",
+              message:
+                errores.length === 0
+                  ? `${subidos} documento(s) enviados a revisión correctamente.`
+                  : `${subidos} documento(s) subidos. Fallaron: ${errores.join(" | ")}`,
+            },
+          },
+        });
         return;
       }
 
-      // 1. Determinar si es DuocUC
+      // ── MODO REGISTRO COMPLETO ────────────────────────────────────────────
       const isDuocVip = email.toLowerCase().endsWith("@duocuc.cl");
-      
-      // 2. Determinar rolId (PROPIETARIO=2, ARRIENDATARIO=3)
       const rolId = rol === "PROPIETARIO" ? 2 : 3;
 
-      // 3. Crear el usuario
       const nuevoUsuario: CrearUsuarioRequest = {
         pnombre: pnombre.trim(),
         snombre: snombre.trim() || undefined,
         papellido: papellido.trim(),
-        fnacimiento: fnacimiento,
+        fnacimiento,
         email: email.trim().toLowerCase(),
         rut: rut.trim(),
         ntelefono: ntelefono.trim(),
         clave: password,
-        estadoId: 1, // ACTIVO
-        rolId: rolId,
+        estadoId: 1,
+        rolId,
         duocVip: isDuocVip ? 1 : 0,
         codigoRef: codigoRef.trim() || undefined,
       };
 
-      console.log("Registrando usuario...", nuevoUsuario);
       const usuarioCreado = await userService.registrar(nuevoUsuario);
-      console.log("Usuario creado exitosamente:", usuarioCreado);
 
-      // 4a. Guardar sesión ANTES de subir documentos para que getAuthHeaders()
-      //     pueda leer userId/userRole al hacer las llamadas a documentService
+      // FIX: guardar sesión ANTES de subir documentos para que getAuthHeaders()
+      // tenga userId/userRole disponibles en las llamadas a documentService
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userEmail", usuarioCreado.email);
       localStorage.setItem("userId", usuarioCreado.id.toString());
       localStorage.setItem("userRole", rol);
 
-      // 4. Subir documentos
-      const documentosSubidos = [];
-      for (const [, doc] of Object.entries(documentos)) {
-        if (doc.archivo) {
-          // En producción real, aquí subirías el archivo a un storage
-          // y obtendrías una URL. Por ahora simulamos con el nombre del archivo
-          const documentoRequest: CrearDocumentoRequest = {
-            nombre: doc.archivo.name,
-            usuarioId: usuarioCreado.id,
-            estadoId: 1, // PENDIENTE
-            tipoDocId: doc.tipoDocId,
-          };
-          
-          console.log(`Subiendo documento ${doc.nombre}...`);
-          const documentoCreado = await documentoService.crear(documentoRequest);
-          documentosSubidos.push(documentoCreado);
-          console.log(`Documento ${doc.nombre} subido exitosamente`);
-        }
+      const { subidos, errores } = await subirDocumentos(usuarioCreado.id);
+
+      if (errores.length > 0) {
+        console.warn("Algunos documentos no se pudieron subir:", errores);
       }
 
-      console.log(`Total documentos subidos: ${documentosSubidos.length}`);
-
-      // 5. Mostrar mensaje de éxito (toast global)
       navigate("/", {
         state: {
           flash: {
             variant: "success",
             message:
               `¡Registro exitoso! ${isDuocVip ? "Tienes 20% de descuento DuocUC. " : ""}` +
-              "Tus documentos quedan en revisión.",
+              (subidos > 0
+                ? `${subidos} documento(s) en revisión.`
+                : "Puedes subir tus documentos desde tu perfil.") +
+              (errores.length > 0 ? ` (${errores.length} no se pudieron subir)` : ""),
           },
         },
       });
 
-      // 7. Avisar a App que el usuario está logueado
       onRegisterSuccess?.();
-
-      // 8. Redirección ya realizada arriba con flash
-
     } catch (error) {
       console.error("Error en el registro:", error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
@@ -293,118 +299,93 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
 
   useEffect(() => {
     if (!notificacion) return;
-    const id = window.setTimeout(() => setNotificacion(null), 2600);
+    const id = window.setTimeout(() => setNotificacion(null), 4000);
     return () => window.clearTimeout(id);
   }, [notificacion]);
 
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
-    <div className="main-content d-flex justify-content-center align-items-center py-5" style={{ minHeight: "100vh" }}>
-      {notificacion ? (
+    <div
+      className="main-content d-flex justify-content-center align-items-center py-5"
+      style={{ minHeight: "100vh" }}
+    >
+      {notificacion && (
         <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
           <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
             {notificacion.message}
           </div>
         </div>
-      ) : null}
-      <div className="contact-form-container p-4 rounded shadow-lg" style={{ width: "100%", maxWidth: currentStep === 1 ? "600px" : "800px" }}>
+      )}
+
+      <div
+        className="contact-form-container p-4 rounded shadow-lg"
+        style={{ width: "100%", maxWidth: currentStep === 1 ? "600px" : "800px" }}
+      >
         <h2 className="text-center mb-4 text-primary">
-          {isUploadOnly ? "Subir documentos" : (currentStep === 1 ? "Crear cuenta - Paso 1/2" : "Crear cuenta - Paso 2/2")}
+          {isUploadOnly
+            ? "Subir documentos"
+            : currentStep === 1
+            ? "Crear cuenta - Paso 1/2"
+            : "Crear cuenta - Paso 2/2"}
         </h2>
 
-        {/* Indicador de progreso */}
         {!isUploadOnly && (
-        <div className="progress mb-4" style={{ height: "5px" }}>
-          <div 
-            className="progress-bar" 
-            role="progressbar" 
-            style={{ width: `${(currentStep / 2) * 100}%` }}
-            aria-valuenow={currentStep} 
-            aria-valuemin={0} 
-            aria-valuemax={2}
-          ></div>
-        </div>
+          <div className="progress mb-4" style={{ height: "5px" }}>
+            <div
+              className="progress-bar"
+              role="progressbar"
+              style={{ width: `${(currentStep / 2) * 100}%` }}
+              aria-valuenow={currentStep}
+              aria-valuemin={0}
+              aria-valuemax={2}
+            />
+          </div>
         )}
 
-        {/* PASO 1: DATOS PERSONALES */}
+        {/* ── PASO 1: DATOS PERSONALES ─────────────────────────────────────── */}
         {currentStep === 1 && (
           <form onSubmit={(e) => { e.preventDefault(); handleNextStep(); }} className="login-form">
             <div className="row">
               <div className="col-md-6 mb-3">
                 <label htmlFor="pnombre" className="form-label fw-bold">Primer Nombre *</label>
-                <input
-                  type="text"
-                  id="pnombre"
-                  className={`form-control ${errors.pnombre ? "is-invalid" : ""}`}
-                  value={pnombre}
-                  onChange={(e) => setPnombre(e.target.value)}
-                  placeholder="Juan"
-                />
+                <input type="text" id="pnombre" className={`form-control ${errors.pnombre ? "is-invalid" : ""}`}
+                  value={pnombre} onChange={(e) => setPnombre(e.target.value)} placeholder="Juan" />
                 {errors.pnombre && <div className="invalid-feedback">{errors.pnombre}</div>}
               </div>
-
               <div className="col-md-6 mb-3">
                 <label htmlFor="snombre" className="form-label fw-bold">Segundo Nombre</label>
-                <input
-                  type="text"
-                  id="snombre"
-                  className="form-control"
-                  value={snombre}
-                  onChange={(e) => setSnombre(e.target.value)}
-                  placeholder="Carlos (opcional)"
-                />
+                <input type="text" id="snombre" className="form-control"
+                  value={snombre} onChange={(e) => setSnombre(e.target.value)} placeholder="Carlos (opcional)" />
               </div>
             </div>
 
             <div className="mb-3">
               <label htmlFor="papellido" className="form-label fw-bold">Apellido *</label>
-              <input
-                type="text"
-                id="papellido"
-                className={`form-control ${errors.papellido ? "is-invalid" : ""}`}
-                value={papellido}
-                onChange={(e) => setPapellido(e.target.value)}
-                placeholder="Pérez"
-              />
+              <input type="text" id="papellido" className={`form-control ${errors.papellido ? "is-invalid" : ""}`}
+                value={papellido} onChange={(e) => setPapellido(e.target.value)} placeholder="Pérez" />
               {errors.papellido && <div className="invalid-feedback">{errors.papellido}</div>}
             </div>
 
             <div className="row">
               <div className="col-md-6 mb-3">
                 <label htmlFor="rut" className="form-label fw-bold">RUT *</label>
-                <input
-                  type="text"
-                  id="rut"
-                  className={`form-control ${errors.rut ? "is-invalid" : ""}`}
-                  value={rut}
-                  onChange={(e) => setRut(e.target.value)}
-                  placeholder="12345678-9"
-                />
+                <input type="text" id="rut" className={`form-control ${errors.rut ? "is-invalid" : ""}`}
+                  value={rut} onChange={(e) => setRut(e.target.value)} placeholder="12345678-9" />
                 {errors.rut && <div className="invalid-feedback">{errors.rut}</div>}
               </div>
-
               <div className="col-md-6 mb-3">
                 <label htmlFor="fnacimiento" className="form-label fw-bold">Fecha de Nacimiento *</label>
-                <input
-                  type="date"
-                  id="fnacimiento"
-                  className={`form-control ${errors.fnacimiento ? "is-invalid" : ""}`}
-                  value={fnacimiento}
-                  onChange={(e) => setFnacimiento(e.target.value)}
-                />
+                <input type="date" id="fnacimiento" className={`form-control ${errors.fnacimiento ? "is-invalid" : ""}`}
+                  value={fnacimiento} onChange={(e) => setFnacimiento(e.target.value)} />
                 {errors.fnacimiento && <div className="invalid-feedback">{errors.fnacimiento}</div>}
               </div>
             </div>
 
             <div className="mb-3">
               <label htmlFor="email" className="form-label fw-bold">Correo electrónico *</label>
-              <input
-                type="email"
-                id="email"
-                className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@ejemplo.com"
-              />
+              <input type="email" id="email" className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
               {errors.email && <div className="invalid-feedback">{errors.email}</div>}
               {email.toLowerCase().endsWith("@duocuc.cl") && (
                 <div className="text-success mt-1">
@@ -415,41 +396,22 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
 
             <div className="mb-3">
               <label htmlFor="ntelefono" className="form-label fw-bold">Teléfono *</label>
-              <input
-                type="tel"
-                id="ntelefono"
-                className={`form-control ${errors.ntelefono ? "is-invalid" : ""}`}
-                value={ntelefono}
-                onChange={(e) => setNtelefono(e.target.value)}
-                placeholder="+56912345678"
-              />
+              <input type="tel" id="ntelefono" className={`form-control ${errors.ntelefono ? "is-invalid" : ""}`}
+                value={ntelefono} onChange={(e) => setNtelefono(e.target.value)} placeholder="+56912345678" />
               {errors.ntelefono && <div className="invalid-feedback">{errors.ntelefono}</div>}
             </div>
 
             <div className="row">
               <div className="col-md-6 mb-3">
                 <label htmlFor="password" className="form-label fw-bold">Contraseña *</label>
-                <input
-                  type="password"
-                  id="password"
-                  className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                />
+                <input type="password" id="password" className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                  value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
                 {errors.password && <div className="invalid-feedback">{errors.password}</div>}
               </div>
-
               <div className="col-md-6 mb-3">
                 <label htmlFor="confirmPassword" className="form-label fw-bold">Confirmar Contraseña *</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repetir contraseña"
-                />
+                <input type="password" id="confirmPassword" className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repetir contraseña" />
                 {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
               </div>
             </div>
@@ -458,32 +420,16 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
               <label className={`form-label fw-bold ${errors.rol ? "text-danger" : ""}`}>Tipo de Cuenta *</label>
               <div className="d-flex justify-content-center gap-5">
                 <div className="form-check">
-                  <input
-                    className={`form-check-input ${errors.rol ? "is-invalid" : ""}`}
-                    type="radio"
-                    name="rolOptions"
-                    id="rolPropietario"
-                    value="PROPIETARIO"
-                    checked={rol === "PROPIETARIO"}
-                    onChange={(e) => setRol(e.target.value as Rol)}
-                  />
-                  <label className="form-check-label" htmlFor="rolPropietario">
-                    Propietario
-                  </label>
+                  <input className={`form-check-input ${errors.rol ? "is-invalid" : ""}`} type="radio"
+                    name="rolOptions" id="rolPropietario" value="PROPIETARIO"
+                    checked={rol === "PROPIETARIO"} onChange={(e) => setRol(e.target.value as Rol)} />
+                  <label className="form-check-label" htmlFor="rolPropietario">Propietario</label>
                 </div>
                 <div className="form-check">
-                  <input
-                    className={`form-check-input ${errors.rol ? "is-invalid" : ""}`}
-                    type="radio"
-                    name="rolOptions"
-                    id="rolArrendatario"
-                    value="ARRIENDATARIO"
-                    checked={rol === "ARRIENDATARIO"}
-                    onChange={(e) => setRol(e.target.value as Rol)}
-                  />
-                  <label className="form-check-label" htmlFor="rolArrendatario">
-                    Arrendatario
-                  </label>
+                  <input className={`form-check-input ${errors.rol ? "is-invalid" : ""}`} type="radio"
+                    name="rolOptions" id="rolArrendatario" value="ARRIENDATARIO"
+                    checked={rol === "ARRIENDATARIO"} onChange={(e) => setRol(e.target.value as Rol)} />
+                  <label className="form-check-label" htmlFor="rolArrendatario">Arrendatario</label>
                 </div>
               </div>
               {errors.rol && <div className="invalid-feedback d-block text-center mt-2">{errors.rol}</div>}
@@ -491,14 +437,8 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
 
             <div className="mb-3">
               <label htmlFor="codigoRef" className="form-label fw-bold">Código de Referido (opcional)</label>
-              <input
-                type="text"
-                id="codigoRef"
-                className="form-control"
-                value={codigoRef}
-                onChange={(e) => setCodigoRef(e.target.value)}
-                placeholder="Código de referido"
-              />
+              <input type="text" id="codigoRef" className="form-control"
+                value={codigoRef} onChange={(e) => setCodigoRef(e.target.value)} placeholder="Código de referido" />
               <small className="text-muted">Si tienes un código de referido, ¡ambos ganan LeaseflowPoints!</small>
             </div>
 
@@ -508,7 +448,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
           </form>
         )}
 
-        {/* PASO 2: DOCUMENTOS */}
+        {/* ── PASO 2: DOCUMENTOS ───────────────────────────────────────────── */}
         {currentStep === 2 && (
           <form onSubmit={handleSubmit} className="login-form">
             <div className="alert alert-info mb-4">
@@ -520,7 +460,7 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
               </p>
             </div>
 
-            {errors._form ? <div className="alert alert-danger">{errors._form}</div> : null}
+            {errors._form && <div className="alert alert-danger">{errors._form}</div>}
 
             <div className="row">
               {Object.entries(documentos).map(([key, doc]) => (
@@ -532,12 +472,14 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
                     type="file"
                     id={key}
                     className={`form-control ${errors[key] ? "is-invalid" : ""}`}
-                    onChange={(e) => handleFileChange(key, e.target.files?.[0] || null)}
+                    onChange={(e) => handleFileChange(key, e.target.files?.[0] ?? null)}
                     accept=".pdf,.jpg,.jpeg,.png"
                   />
                   {doc.archivo && (
                     <small className="text-success d-block mt-1">
-                      ✓ {doc.archivo.name}
+                      ✓ {doc.archivo.name.length > 40
+                          ? doc.archivo.name.slice(0, 37) + "..."
+                          : doc.archivo.name}
                     </small>
                   )}
                   {errors[key] && <div className="invalid-feedback">{errors[key]}</div>}
@@ -547,28 +489,22 @@ const Registro: React.FC<{ onRegisterSuccess?: () => void; mode?: RegistroMode }
 
             <div className="alert alert-warning mt-3">
               <small>
-                <strong>⚠️ Importante:</strong> Los documentos serán revisados por el equipo de Leaseflow. 
+                <strong>⚠️ Importante:</strong> Los documentos serán revisados por el equipo de Leaseflow.
                 Recibirás una notificación cuando sean aprobados.
               </small>
             </div>
 
             <div className="d-flex gap-2 mt-4">
               {!isUploadOnly && (
-                <button 
-                  type="button" 
-                  className="btn btn-outline-secondary flex-fill"
-                  onClick={handlePreviousStep}
-                  disabled={loading}
-                >
+                <button type="button" className="btn btn-outline-secondary flex-fill"
+                  onClick={handlePreviousStep} disabled={loading}>
                   ← Volver
                 </button>
               )}
-              <button 
-                type="submit" 
-                className="btn btn-primary flex-fill"
-                disabled={loading}
-              >
-                {loading ? (isUploadOnly ? "Enviando..." : "Registrando...") : (isUploadOnly ? "Enviar documentos" : "Completar Registro")}
+              <button type="submit" className="btn btn-primary flex-fill" disabled={loading}>
+                {loading
+                  ? isUploadOnly ? "Enviando..." : "Registrando..."
+                  : isUploadOnly ? "Enviar documentos" : "Completar Registro"}
               </button>
             </div>
           </form>
