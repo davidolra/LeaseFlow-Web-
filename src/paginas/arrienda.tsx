@@ -24,7 +24,7 @@ const Estrellas: React.FC<{ promedio: number | null; total?: number }> = ({ prom
   return (
     <div className="d-flex align-items-center gap-1">
       <span style={{ color: "#f5a623", fontSize: "1rem", letterSpacing: "-1px" }}>
-        {estrellas.map((tipo, i) =>
+        {estrellas.map((tipo) =>
           tipo === "full" ? "★" : tipo === "half" ? "⯨" : "☆"
         ).join("")}
       </span>
