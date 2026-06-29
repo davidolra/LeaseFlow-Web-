@@ -4,9 +4,6 @@ import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO,
 
 const BASE_URL = API_CONFIG.USER_SERVICE;
 
-/**
- * Parse error response from server
- */
 async function parseErrorResponse(response: Response): Promise<{ message: string; validationErrors?: Record<string, string> }> {
   try {
     return await response.json();
@@ -15,13 +12,7 @@ async function parseErrorResponse(response: Response): Promise<{ message: string
   }
 }
 
-/**
- * Usuario Service
- */
 export const userService = {
-  /**
-   * Login de usuario — PÚBLICO, no requiere X-Usuario-Id ni X-Rol-Id
-   */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
       console.log('Intentando login con:', credentials.email);
@@ -59,9 +50,6 @@ export const userService = {
     }
   },
 
-  /**
-   * Registrar nuevo usuario — PÚBLICO, no requiere headers de auth
-   */
   async registrar(usuario: CrearUsuarioRequest): Promise<UsuarioDTO> {
     try {
       console.log('Registrando nuevo usuario:', usuario.email);
@@ -88,9 +76,6 @@ export const userService = {
     }
   },
 
-  /**
-   * Obtener usuario por ID — PROTEGIDO, requiere X-Usuario-Id y X-Rol-Id
-   */
   async obtenerPorId(id: number, includeDetails: boolean = false): Promise<UsuarioDTO> {
     try {
       const url = `${BASE_URL}/usuarios/${id}${includeDetails ? '?includeDetails=true' : ''}`;
@@ -179,42 +164,22 @@ export const userService = {
     }
   },
 
+  // ✅ SIMPLIFICADO: usa directamente PATCH /usuarios/{id}/clave
   async cambiarContrasena(id: number, claveActual: string, claveNueva: string): Promise<void> {
     try {
-      const payload = { claveActual, claveNueva };
-      const candidates = [
-        `${BASE_URL}/usuarios/${id}/clave`,
-        `${BASE_URL}/usuarios/${id}/password`,
-        `${BASE_URL}/usuarios/${id}/contrasena`,
-      ];
-
-      for (const url of candidates) {
-        const response = await fetch(url, {
-          method: 'PATCH',
-          headers: getAuthHeaders(true),
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) return;
-        if (response.status === 404 || response.status === 405) continue;
-
-        const errorData = await parseErrorResponse(response);
-        throw ErrorHandlerService.handle(
-          { status: response.status, message: errorData.message },
-          `cambiarContrasena(${id})`
-        );
-      }
-
-      const fallbackResponse = await fetch(`${BASE_URL}/usuarios/${id}`, {
-        method: 'PUT',
+      const response = await fetch(`${BASE_URL}/usuarios/${id}/clave`, {
+        method: 'PATCH',
         headers: getAuthHeaders(true),
-        body: JSON.stringify({ claveActual, clave: claveNueva }),
+        body: JSON.stringify({ claveActual, claveNueva }),
       });
 
-      if (!fallbackResponse.ok) {
-        const errorData = await parseErrorResponse(fallbackResponse);
+      if (!response.ok) {
+        const errorData = await parseErrorResponse(response);
+        const mensaje = response.status === 401 || response.status === 400
+          ? 'La contraseña actual es incorrecta'
+          : errorData.message || 'No se pudo cambiar la contraseña';
         throw ErrorHandlerService.handle(
-          { status: fallbackResponse.status, message: errorData.message },
+          { status: response.status, message: mensaje },
           `cambiarContrasena(${id})`
         );
       }
@@ -277,9 +242,6 @@ export const userService = {
     }
   },
 
-  /**
-   * Verificar si existe un usuario por ID — PROTEGIDO
-   */
   async existe(id: number): Promise<boolean> {
     try {
       const response = await fetch(`${BASE_URL}/usuarios/${id}/exists`, {
@@ -287,10 +249,7 @@ export const userService = {
         headers: getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        return false;
-      }
-
+      if (!response.ok) return false;
       return await response.json();
     } catch (error: unknown) {
       console.warn(`Advertencia verificando existencia de usuario ${id}:`, error);
@@ -298,9 +257,6 @@ export const userService = {
     }
   },
 
-  /**
-   * Listar todos los usuarios — PROTEGIDO (solo Admin)
-   */
   async listar(includeDetails: boolean = false): Promise<UsuarioDTO[]> {
     try {
       const url = `${BASE_URL}/usuarios${includeDetails ? '?includeDetails=true' : ''}`;
@@ -324,9 +280,6 @@ export const userService = {
   },
 };
 
-/**
- * Servicio de Roles — PROTEGIDO
- */
 export const rolService = {
   async listar(): Promise<RolDTO[]> {
     try {
@@ -369,9 +322,6 @@ export const rolService = {
   },
 };
 
-/**
- * Servicio de Estados de Usuario — PROTEGIDO
- */
 export const estadoUsuarioService = {
   async listar(): Promise<EstadoUsuarioDTO[]> {
     try {

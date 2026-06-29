@@ -23,7 +23,6 @@ interface Propiedad {
   tipoId: number;
   comunaId: number;
   propietarioId: number; 
-  propietarioEmail: string;
   imagen: string; 
   estadoPropiedad?: 'ACTIVA' | 'INACTIVA' | 'EN_REVISION' | 'ARRENDADA';
 }
@@ -65,7 +64,6 @@ const GestionPropiedades: React.FC<{ scope?: GestionPropiedadesScope }> = ({ sco
     tipoId: 0, // Inicializado en 0 para forzar selección
     comunaId: 0, // Inicializado en 0 para forzar selección
     propietarioId: userId ? Number(userId) : 0, 
-    propietarioEmail: userEmail,
     imagen: "",
   };
 
@@ -186,7 +184,6 @@ const fetchPropiedades = async () => {
       ...INITIAL_PROPIEDAD_STATE,
       codigo: `P-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,  // máx 10 chars
       propietarioId: userId ? Number(userId) : 0,
-      propietarioEmail: userEmail,
       tipoId: tipos.length > 0 ? tipos[0].id : 0,
       comunaId: nextComunaId,
     });
@@ -405,7 +402,7 @@ const fetchPropiedades = async () => {
                       
                       {userRole === ROLES.ADMIN && (
                         <p className="text-muted small">
-                          <strong>Propietario:</strong> {propiedad.propietarioEmail}
+                          <strong>Propietario ID:</strong> {propiedad.propietarioId}
                         </p>
                       )}
 
