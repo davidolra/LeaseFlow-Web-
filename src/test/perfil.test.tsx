@@ -4,11 +4,20 @@ import { MemoryRouter } from "react-router-dom";
 import Perfil from "../paginas/perfil";
 
 // =====================================================================
-// MOCK DE userService (necesario para handleGuardarCambios y cambiarContrasena)
+// vi.hoisted garantiza que estas variables existen ANTES del hoist de vi.mock
 // =====================================================================
-const mockActualizar = vi.fn();
-const mockCambiarContrasena = vi.fn();
+const { mockActualizar, mockCambiarContrasena, mockObtenerUsuarioActual, mockObtenerDocumentosUsuario, navigateMock } =
+  vi.hoisted(() => ({
+    mockActualizar: vi.fn(),
+    mockCambiarContrasena: vi.fn(),
+    mockObtenerUsuarioActual: vi.fn(),
+    mockObtenerDocumentosUsuario: vi.fn(),
+    navigateMock: vi.fn(),
+  }));
 
+// =====================================================================
+// MOCK DE userService
+// =====================================================================
 vi.mock("../api/userService", () => ({
   userService: {
     actualizar: mockActualizar,
@@ -19,7 +28,6 @@ vi.mock("../api/userService", () => ({
 // =====================================================================
 // MOCK DE useUsuarios
 // =====================================================================
-const mockObtenerUsuarioActual = vi.fn();
 vi.mock("../hooks/useUsuarios", () => ({
   useUsuarios: () => ({
     obtenerUsuarioActual: mockObtenerUsuarioActual,
@@ -34,7 +42,6 @@ vi.mock("../hooks/useUsuarios", () => ({
 // =====================================================================
 // MOCK DE useDocumentos
 // =====================================================================
-const mockObtenerDocumentosUsuario = vi.fn();
 vi.mock("../hooks/useDocumentos", () => ({
   useDocumentos: () => ({
     obtenerDocumentosUsuario: mockObtenerDocumentosUsuario,
@@ -49,7 +56,6 @@ vi.mock("../hooks/useDocumentos", () => ({
 // =====================================================================
 // MOCK DE useNavigate
 // =====================================================================
-const navigateMock = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return {
@@ -293,7 +299,6 @@ describe("Perfil Component - Microservicios", () => {
     await waitFor(() => {
       expect(screen.getByText(/el nombre es obligatorio/i)).toBeInTheDocument();
     });
-    // El servicio NO debe llamarse si hay error de validación
     expect(mockActualizar).not.toHaveBeenCalled();
   });
 
@@ -385,8 +390,6 @@ describe("Perfil Component - Microservicios", () => {
 
     await waitForUsuario();
 
-    const inputs = screen.getAllByDisplayValue("");
-    // claveActual, claveNueva, confirmClaveNueva — los 3 inputs de contraseña están vacíos al inicio
     fireEvent.change(screen.getByLabelText(/contraseña actual/i), { target: { value: "actual123" } });
     fireEvent.change(screen.getByLabelText(/nueva contraseña/i), { target: { value: "corta" } });
     fireEvent.change(screen.getByLabelText(/confirmar/i), { target: { value: "corta" } });
