@@ -2,109 +2,87 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../config/apiConfig";
 import { getErrorMessage } from "../core/errors";
-import { propiedadService, solicitudService } from "../api";
-import { documentoService } from "../api/documentService";
-import { userService } from "../api/userService";
-import type { DocumentoDTO, PropiedadDTO, SolicitudArriendoDTO, UsuarioDTO } from "../types";
+import { solicitudService, registroService } from "../api";
+import type { SolicitudArriendoDTO, CrearRegistroRequest } from "../types";
 
-const formatDate = (value?: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("es-CL");
-};
+// ─────────────────────────────────────────────
+// Tipos locales
+// ─────────────────────────────────────────────
+type EstadoFiltro = "TODAS" | "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
 
-const formatDateOnly = (value?: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("es-CL");
-};
+interface ModalRegistro {
+  solicitud: SolicitudArriendoDTO;
+  fechaInicio: string;
+  fechaFin: string;
+  montoMensual: string;
+  error: string | null;
+  submitting: boolean;
+}
 
-const formatMoney = (amount?: number, currency: "CLP" | "USD" | "EUR" = "CLP") => {
-  if (amount === undefined || amount === null || Number.isNaN(amount)) return "-";
+interface SolicitudesRecibidasProps {
+  // "MINE": solo las solicitudes de las propiedades del usuario logueado (propietario, o admin actuando como propietario)
+  // "ALL": gestor global, todas las solicitudes existentes (solo tiene sentido para ADMIN)
+  scope?: "MINE" | "ALL";
+}
 
-  const locale = currency === "CLP" ? "es-CL" : "en-US";
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: currency === "CLP" ? 0 : 2,
-  }).format(amount);
-};
-
-const yesNo = (value?: boolean) => {
-  if (value === undefined) return "-";
-  return value ? "Si" : "No";
-};
-
-const applicantNameFromUser = (usuarioId: number, usuario?: UsuarioDTO) => {
-  if (!usuario) return `Usuario #${usuarioId}`;
-  return [usuario.pnombre, usuario.snombre, usuario.papellido].filter(Boolean).join(" ");
-};
-
-const applicantInitialsFromUser = (usuario?: UsuarioDTO) => {
-  if (!usuario) return "U";
-  return `${usuario.pnombre?.charAt(0) || ""}${usuario.papellido?.charAt(0) || ""}`.toUpperCase() || "U";
-};
-
-const statusBadgeClass = (estado: SolicitudArriendoDTO["estado"]) => {
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+function badgeClase(estado: string): string {
   if (estado === "ACEPTADA") return "bg-success";
   if (estado === "RECHAZADA") return "bg-danger";
   return "bg-warning text-dark";
-};
+}
 
-const documentStatusBadgeClass = (estadoId?: number) => {
-  if (estadoId === 2) return "bg-success";
-  if (estadoId === 3) return "bg-danger";
-  if (estadoId === 4) return "bg-info text-dark";
-  return "bg-warning text-dark";
-};
+function hoy(): string {
+  return new Date().toISOString().split("T")[0];
+}
 
-const documentStatusLabel = (documento: DocumentoDTO) => {
-  if (documento.estadoNombre) return documento.estadoNombre;
-  if (documento.estadoId === 2) return "ACEPTADO";
-  if (documento.estadoId === 3) return "RECHAZADO";
-  if (documento.estadoId === 4) return "EN_REVISION";
-  return "PENDIENTE";
-};
-
-const documentTypeLabel = (documento: DocumentoDTO) => {
-  return documento.tipoDocNombre || `Tipo #${documento.tipoDocId}`;
-};
-
-const acceptedDocuments = (documentos: DocumentoDTO[]) => {
-  return documentos.filter((doc) => doc.estadoId === 2);
-};
-
-const SolicitudesRecibidas: React.FC = () => {
+// ─────────────────────────────────────────────
+// Componente
+// ─────────────────────────────────────────────
+const SolicitudesRecibidas: React.FC<SolicitudesRecibidasProps> = ({ scope = "MINE" }) => {
   const navigate = useNavigate();
   const userRole = (localStorage.getItem("userRole") || "").toUpperCase();
   const userId = Number(localStorage.getItem("userId") || "0");
+  const esAdmin = userRole === ROLES.ADMIN;
+  const esGestorGlobal = scope === "ALL" && esAdmin;
 
+  // ── Estado principal ──────────────────────
   const [solicitudes, setSolicitudes] = useState<SolicitudArriendoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notificacion, setNotificacion] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
-  const [processingId, setProcessingId] = useState<number | null>(null);
-  const [expandedApplicantId, setExpandedApplicantId] = useState<number | null>(null);
-  const [loadingDocumentsUserId, setLoadingDocumentsUserId] = useState<number | null>(null);
-  const [documentosPorUsuario, setDocumentosPorUsuario] = useState<Record<number, DocumentoDTO[]>>({});
-  const [erroresDocumentosPorUsuario, setErroresDocumentosPorUsuario] = useState<Record<number, string>>({});
-  const [usuariosPorId, setUsuariosPorId] = useState<Record<number, UsuarioDTO>>({});
+  const [notificacion, setNotificacion] = useState<{
+    variant: "success" | "danger";
+    message: string;
+  } | null>(null);
 
+  // ── Estado de acciones ────────────────────
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [confirmRechazarId, setConfirmRechazarId] = useState<number | null>(null);
+  const [filtro, setFiltro] = useState<EstadoFiltro>("PENDIENTE");
+
+  // ── Modal para crear registro ─────────────
+  const [modal, setModal] = useState<ModalRegistro | null>(null);
+
+  // ── Auto-dismiss notificación ─────────────
   useEffect(() => {
     if (!notificacion) return;
-    const id = window.setTimeout(() => setNotificacion(null), 2600);
+    const id = window.setTimeout(() => setNotificacion(null), 3000);
     return () => window.clearTimeout(id);
   }, [notificacion]);
 
+  // ─────────────────────────────────────────
+  // Carga de datos
+  // ─────────────────────────────────────────
   const fetchSolicitudes = useCallback(async () => {
     if (localStorage.getItem("isLoggedIn") !== "true") {
       navigate("/login");
       return;
     }
-
     if (userRole !== ROLES.PROPIETARIO && userRole !== ROLES.ADMIN) {
       setLoading(false);
-      setError("Acceso denegado.");
+      setError("Acceso denegado. Esta sección es solo para propietarios.");
       return;
     }
 
@@ -112,122 +90,173 @@ const SolicitudesRecibidas: React.FC = () => {
     setError(null);
 
     try {
-      const propiedades: PropiedadDTO[] =
-        userRole === ROLES.ADMIN ? await propiedadService.listar(true) : await propiedadService.listarPorPropietario(userId, true);
+      // Traemos TODAS las solicitudes con detalles (el backend filtra por rol vía X-Rol-Id)
+      const data = await solicitudService.listar(true);
+      const all = Array.isArray(data) ? data : [];
 
-      const propiedadIds = new Set<number>((propiedades || []).map((p) => p.id));
-      const propiedadPorId = new Map<number, PropiedadDTO>();
-      (propiedades || []).forEach((p) => propiedadPorId.set(p.id, p));
+      // Gestor global (solo ADMIN con scope="ALL"): no se filtra, se ve todo.
+      // Cualquier otro caso (propietario, o admin viendo "sus" solicitudes):
+      // se filtra siempre por propietarioId === userId.
+      const filtradas = esGestorGlobal
+        ? all
+        : all.filter((s) => {
+            const prop = s.propiedad as (typeof s.propiedad & { propietarioId?: number }) | undefined;
+            return prop?.propietarioId === userId;
+          });
 
-      const allSolicitudes = await solicitudService.listar(true);
-      const merged = (allSolicitudes || []).filter((s) => propiedadIds.has(s.propiedadId));
-
-      const uniq = new Map<number, SolicitudArriendoDTO>();
-      merged.forEach((s) => {
-        const prop = propiedadPorId.get(s.propiedadId);
-        uniq.set(s.id, { ...s, propiedad: prop || s.propiedad });
-      });
-
-      const finalSolicitudes = Array.from(uniq.values());
-      setSolicitudes(finalSolicitudes);
-
-      const missingUserIds = Array.from(
-        new Set(
-          finalSolicitudes
-            .filter((s) => {
-              return !s.usuario || !s.usuario.email;
-            })
-            .map((s) => s.usuarioId)
-        )
-      );
-
-      if (missingUserIds.length > 0) {
-        const results = await Promise.all(
-          missingUserIds.map(async (id) => {
-            try {
-              const usuario = await userService.obtenerPorId(id, true);
-              return { id, usuario };
-            } catch (_error: unknown) {
-              return null;
-            }
-          })
-        );
-
-        const next: Record<number, UsuarioDTO> = {};
-        results.forEach((r) => {
-          if (!r) return;
-          next[r.id] = r.usuario;
-        });
-
-        if (Object.keys(next).length > 0) {
-          setUsuariosPorId((prev) => ({ ...prev, ...next }));
-        }
-      }
-    } catch (error: unknown) {
-      setError(getErrorMessage(error, "No se pudieron cargar las solicitudes recibidas."));
+      setSolicitudes(filtradas);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "No se pudieron cargar las solicitudes."));
     } finally {
       setLoading(false);
     }
-  }, [navigate, userId, userRole]);
+  }, [navigate, userId, userRole, esGestorGlobal]);
 
   useEffect(() => {
     fetchSolicitudes();
   }, [fetchSolicitudes]);
 
-  const toggleApplicantDocuments = async (usuarioId: number) => {
-    if (expandedApplicantId === usuarioId) {
-      setExpandedApplicantId(null);
-      return;
-    }
+  // ─────────────────────────────────────────
+  // Filtrado y orden
+  // ─────────────────────────────────────────
+  const solicitudesFiltradas = useMemo(() => {
+    const base =
+      filtro === "TODAS" ? solicitudes : solicitudes.filter((s) => s.estado === filtro);
+    return [...base].sort(
+      (a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime()
+    );
+  }, [solicitudes, filtro]);
 
-    setExpandedApplicantId(usuarioId);
+  const conteos = useMemo(
+    () => ({
+      TODAS: solicitudes.length,
+      PENDIENTE: solicitudes.filter((s) => s.estado === "PENDIENTE").length,
+      ACEPTADA: solicitudes.filter((s) => s.estado === "ACEPTADA").length,
+      RECHAZADA: solicitudes.filter((s) => s.estado === "RECHAZADA").length,
+    }),
+    [solicitudes]
+  );
 
-    if (documentosPorUsuario[usuarioId] || loadingDocumentsUserId === usuarioId) {
-      return;
-    }
-
-    try {
-      setLoadingDocumentsUserId(usuarioId);
-      setErroresDocumentosPorUsuario((prev) => {
-        const next = { ...prev };
-        delete next[usuarioId];
-        return next;
-      });
-      const documentos = await documentoService.obtenerPorUsuario(usuarioId, true);
-      setDocumentosPorUsuario((prev) => ({ ...prev, [usuarioId]: Array.isArray(documentos) ? documentos : [] }));
-    } catch (error: unknown) {
-      setErroresDocumentosPorUsuario((prev) => ({
-        ...prev,
-        [usuarioId]: getErrorMessage(error, "No se pudieron cargar los documentos del postulante."),
-      }));
-    } finally {
-      setLoadingDocumentsUserId((current) => (current === usuarioId ? null : current));
-    }
-  };
-
-  const actualizar = async (id: number, estado: "ACEPTADA" | "RECHAZADA") => {
+  // ─────────────────────────────────────────
+  // Acciones
+  // ─────────────────────────────────────────
+  const rechazar = async (id: number) => {
     try {
       setProcessingId(id);
-      const updated = await solicitudService.actualizarEstado(id, estado);
+      setConfirmRechazarId(null);
+      const updated = await solicitudService.actualizarEstado(id, "RECHAZADA");
       setSolicitudes((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      setNotificacion({ variant: "success", message: `Solicitud ${estado}.` });
-    } catch (error: unknown) {
-      setNotificacion({ variant: "danger", message: getErrorMessage(error, "No se pudo actualizar la solicitud.") });
+      setNotificacion({ variant: "success", message: "Solicitud rechazada." });
+    } catch (err: unknown) {
+      setNotificacion({
+        variant: "danger",
+        message: getErrorMessage(err, "No se pudo rechazar la solicitud."),
+      });
     } finally {
       setProcessingId(null);
     }
   };
 
-  const ordenadas = useMemo(() => {
-    return [...solicitudes].sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
-  }, [solicitudes]);
+  // Abre el modal para ingresar datos del registro
+  const abrirModalAceptar = (solicitud: SolicitudArriendoDTO) => {
+    setModal({
+      solicitud,
+      fechaInicio: hoy(),
+      fechaFin: "",
+      // Pre-rellena con el precio mensual de la propiedad si está disponible
+      montoMensual: solicitud.propiedad?.precioMensual?.toString() ?? "",
+      error: null,
+      submitting: false,
+    });
+  };
 
+  const cerrarModal = () => {
+    if (modal?.submitting) return; // no cerrar mientras envía
+    setModal(null);
+  };
+
+  // Acepta la solicitud y crea el registro de arriendo en un solo flujo
+  const confirmarAceptar = async () => {
+    if (!modal) return;
+
+    // ── Validaciones del formulario ──────────
+    const monto = parseFloat(modal.montoMensual);
+    if (!modal.fechaInicio) {
+      setModal((m) => m && { ...m, error: "La fecha de inicio es obligatoria." });
+      return;
+    }
+    if (isNaN(monto) || monto <= 0) {
+      setModal((m) => m && { ...m, error: "El monto mensual debe ser mayor a 0." });
+      return;
+    }
+    if (modal.fechaFin && modal.fechaFin < modal.fechaInicio) {
+      setModal((m) => m && { ...m, error: "La fecha de fin no puede ser anterior a la fecha de inicio." });
+      return;
+    }
+
+    setModal((m) => m && { ...m, submitting: true, error: null });
+
+    try {
+      const solicitudId = modal.solicitud.id;
+
+      // 1. Cambiar estado de la solicitud a ACEPTADA
+      const solicitudActualizada = await solicitudService.actualizarEstado(solicitudId, "ACEPTADA");
+
+      // 2. Crear el registro de arriendo
+      const registroPayload: CrearRegistroRequest = {
+        solicitudId,
+        fechaInicio: modal.fechaInicio,
+        montoMensual: monto,
+        ...(modal.fechaFin ? { fechaFin: modal.fechaFin } : {}),
+      };
+      await registroService.crear(registroPayload);
+
+      // 3. Actualizar lista local
+      setSolicitudes((prev) =>
+        prev.map((s) => (s.id === solicitudId ? solicitudActualizada : s))
+      );
+
+      setModal(null);
+      setNotificacion({
+        variant: "success",
+        message: "¡Solicitud aceptada y contrato de arriendo creado exitosamente!",
+      });
+    } catch (err: unknown) {
+      setModal((m) =>
+        m && {
+          ...m,
+          submitting: false,
+          error: getErrorMessage(err, "No se pudo completar la operación. Intenta nuevamente."),
+        }
+      );
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Guard de acceso
+  // ─────────────────────────────────────────
   if (userRole !== ROLES.PROPIETARIO && userRole !== ROLES.ADMIN) {
-    return <div className="container my-5 alert alert-danger">{error || "Acceso denegado."}</div>;
+    return (
+      <div className="container my-5">
+        <div className="alert alert-danger">Acceso denegado. Esta sección es solo para propietarios.</div>
+      </div>
+    );
   }
 
+  // ─────────────────────────────────────────
+  // Textos de encabezado según scope
+  // ─────────────────────────────────────────
+  const titulo = esGestorGlobal ? "Gestor de Solicitudes" : "Solicitudes Recibidas";
+  const subtitulo = esGestorGlobal
+    ? "Vista administrativa: todas las solicitudes de arriendo del sistema."
+    : "Gestiona las solicitudes de arriendo que han recibido tus propiedades.";
+
+  // ─────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────
   return (
     <div className="container my-5">
+      {/* ── Notificación flotante ── */}
       {notificacion && (
         <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
           <div className={`alert alert-${notificacion.variant} shadow-sm mb-0`} role="alert">
@@ -236,310 +265,314 @@ const SolicitudesRecibidas: React.FC = () => {
         </div>
       )}
 
-      <h1 className="fw-bold mb-2">Solicitudes Recibidas</h1>
-      <p className="text-muted">Revisa postulaciones a tus propiedades.</p>
+      {/* ── Encabezado ── */}
+      <div className="mb-4">
+        <h1 className="fw-bold mb-1">{titulo}</h1>
+        <p className="text-muted mb-0">{subtitulo}</p>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {/* ── Tabs de filtro ── */}
+      <ul className="nav nav-tabs mb-4">
+        {(["PENDIENTE", "ACEPTADA", "RECHAZADA", "TODAS"] as EstadoFiltro[]).map((estado) => (
+          <li className="nav-item" key={estado}>
+            <button
+              type="button"
+              className={`nav-link${filtro === estado ? " active fw-semibold" : ""}`}
+              onClick={() => setFiltro(estado)}
+            >
+              {estado === "TODAS" ? "Todas" : estado.charAt(0) + estado.slice(1).toLowerCase()}
+              <span
+                className={`ms-2 badge rounded-pill ${
+                  estado === "PENDIENTE"
+                    ? "bg-warning text-dark"
+                    : estado === "ACEPTADA"
+                    ? "bg-success"
+                    : estado === "RECHAZADA"
+                    ? "bg-danger"
+                    : "bg-secondary"
+                }`}
+              >
+                {conteos[estado]}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {/* ── Contenido ── */}
       {loading ? (
         <div className="text-center my-5">
           <div className="spinner-border text-primary" role="status" />
           <p className="mt-2">Cargando solicitudes...</p>
         </div>
-      ) : ordenadas.length === 0 ? (
-        <div className="alert alert-secondary text-center">No hay solicitudes para mostrar.</div>
+      ) : solicitudesFiltradas.length === 0 ? (
+        <div className="alert alert-secondary text-center">
+          {filtro === "PENDIENTE"
+            ? "No tienes solicitudes pendientes."
+            : filtro === "TODAS"
+            ? "Aún no has recibido solicitudes."
+            : `No hay solicitudes con estado ${filtro.toLowerCase()}.`}
+        </div>
       ) : (
-        <div className="mt-4 d-grid gap-4">
-          {ordenadas.map((s) => {
-            const usuario = usuariosPorId[s.usuarioId] || s.usuario;
-            const nombreUsuario = applicantNameFromUser(s.usuarioId, usuario);
-            const inicialesUsuario = applicantInitialsFromUser(usuario);
-            const correoUsuario = usuario?.email || "-";
-            const telefonoUsuario = usuario?.ntelefono || "-";
-            const rutUsuario = usuario?.rut || "-";
-            const fechaNacimientoUsuario = formatDateOnly(usuario?.fnacimiento);
-            const rolUsuario = usuario?.rol?.nombre || (usuario?.rolId ? `Rol #${usuario.rolId}` : "-");
-            const estadoUsuario = usuario?.estado?.nombre || (usuario?.estadoId ? `Estado #${usuario.estadoId}` : "-");
-            const duocVipUsuario = yesNo(usuario?.duocVip);
-            const puntosUsuario = usuario?.puntos ?? "-";
-            const codigoRefUsuario = usuario?.codigoRef || "-";
-            const registroUsuario = formatDateOnly(usuario?.fcreacion);
-            const actualizacionUsuario = formatDate(usuario?.factualizacion);
-
-            return (
-              <div key={s.id} className="card shadow-sm border-0">
-              <div className="card-body p-4">
-                <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
-                  <div>
-                    <h2 className="h5 fw-bold mb-1">
-                      {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
-                    </h2>
-                    <div className="text-muted small">Solicitud #{s.id}</div>
-                    <div className="text-muted small">
-                      Fecha de postulacion: {formatDate(s.fechaSolicitud)}
+        <div className="row g-4">
+          {solicitudesFiltradas.map((s) => (
+            <div className="col-12 col-lg-6" key={s.id}>
+              <div className="card shadow-sm h-100">
+                <div className="card-body">
+                  {/* Encabezado de la tarjeta */}
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                      <h5 className="card-title mb-1">
+                        {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
+                      </h5>
+                      <p className="text-muted small mb-0">{s.propiedad?.direccion || ""}</p>
                     </div>
-                  </div>
-                  <div className="d-flex flex-wrap gap-2 align-items-center">
-                    <span className={`badge ${statusBadgeClass(s.estado)}`}>{s.estado}</span>
-                    <span className="badge bg-secondary">Propiedad #{s.propiedadId}</span>
-                    <span className="badge bg-dark">Usuario #{s.usuarioId}</span>
-                  </div>
-                </div>
-
-                <div className="row g-4">
-                  <div className="col-12 col-xl-6">
-                    <div className="border rounded-3 h-100 p-3 bg-light-subtle">
-                      <div className="d-flex align-items-center gap-3 mb-3">
-                        <div
-                          className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
-                          style={{ width: 52, height: 52 }}
-                        >
-                          {inicialesUsuario}
-                        </div>
-                        <div>
-                          <div className="text-uppercase small text-muted">Postulante</div>
-                          <div className="fw-semibold">{nombreUsuario}</div>
-                        </div>
-                      </div>
-
-                      <div className="row g-2 small">
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Correo</div>
-                          <div>{correoUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Telefono</div>
-                          <div>{telefonoUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">RUT</div>
-                          <div>{rutUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Fecha de nacimiento</div>
-                          <div>{fechaNacimientoUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Rol</div>
-                          <div>{rolUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Estado de cuenta</div>
-                          <div>{estadoUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Duoc VIP</div>
-                          <div>{duocVipUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">LeaseflowPoints</div>
-                          <div>{puntosUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Codigo de referido</div>
-                          <div>{codigoRefUsuario}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Registro</div>
-                          <div>{registroUsuario}</div>
-                        </div>
-                        <div className="col-12">
-                          <div className="text-muted">Ultima actualizacion</div>
-                          <div>{actualizacionUsuario}</div>
-                        </div>
-                        <div className="col-12 mt-2">
-                          <button
-                            type="button"
-                            className="btn btn-outline-primary btn-sm"
-                            onClick={() => toggleApplicantDocuments(s.usuarioId)}
-                            disabled={loadingDocumentsUserId === s.usuarioId}
-                          >
-                            {loadingDocumentsUserId === s.usuarioId
-                              ? "Cargando documentos..."
-                              : expandedApplicantId === s.usuarioId
-                                ? "Ocultar documentos"
-                                : "Ver documentos del postulante"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <span className={`badge ${badgeClase(s.estado)}`}>{s.estado}</span>
                   </div>
 
-                  <div className="col-12 col-xl-6">
-                    <div className="border rounded-3 h-100 p-3">
-                      <div className="text-uppercase small text-muted mb-3">Propiedad postulada</div>
-
-                      {s.propiedad?.fotos?.[0]?.url ? (
-                        <img
-                          src={s.propiedad.fotos[0].url}
-                          alt={s.propiedad.titulo}
-                          className="img-fluid rounded mb-3"
-                          style={{ width: "100%", maxHeight: 220, objectFit: "cover" }}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div
-                          className="rounded d-flex align-items-center justify-content-center bg-light text-muted mb-3"
-                          style={{ width: "100%", minHeight: 160 }}
-                        >
-                          Sin imagen disponible
-                        </div>
-                      )}
-
-                      <div className="row g-2 small">
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Titulo</div>
-                          <div className="fw-semibold">
-                            {s.propiedad?.titulo || `Propiedad #${s.propiedadId}`}
-                          </div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Codigo</div>
-                          <div>{s.propiedad?.codigo || "-"}</div>
-                        </div>
-                        <div className="col-12">
-                          <div className="text-muted">Direccion</div>
-                          <div>{s.propiedad?.direccion || "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Comuna</div>
-                          <div>{s.propiedad?.comuna?.nombre || "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Tipo</div>
-                          <div>{s.propiedad?.tipo?.nombre || (s.propiedad?.tipoId ? `Tipo #${s.propiedad.tipoId}` : "-")}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Precio</div>
-                          <div>{formatMoney(s.propiedad?.precioMensual, s.propiedad?.divisa || "CLP")}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Estado de la propiedad</div>
-                          <div>{s.propiedad?.estadoPropiedad || "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-4">
-                          <div className="text-muted">m2</div>
-                          <div>{s.propiedad?.m2 ?? "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-4">
-                          <div className="text-muted">Habitaciones</div>
-                          <div>{s.propiedad?.nHabit ?? "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-4">
-                          <div className="text-muted">Banos</div>
-                          <div>{s.propiedad?.nBanos ?? "-"}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Pet friendly</div>
-                          <div>{yesNo(s.propiedad?.petFriendly)}</div>
-                        </div>
-                        <div className="col-12 col-md-6">
-                          <div className="text-muted">Creacion</div>
-                          <div>{formatDateOnly(s.propiedad?.fcreacion)}</div>
-                        </div>
-                        <div className="col-12">
-                          <div className="text-muted">Descripcion</div>
-                          <div>{s.propiedad?.descripcion || "-"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {expandedApplicantId === s.usuarioId ? (
-                  <div className="mt-4 pt-3 border-top">
-                    <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-                      <div>
-                        <div className="fw-semibold">Documentos aceptados del postulante</div>
-                        <div className="small text-muted">{nombreUsuario}</div>
-                      </div>
-                      <span className="badge bg-secondary">
-                        {acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).length} documento(s)
-                      </span>
-                    </div>
-
-                    {loadingDocumentsUserId === s.usuarioId ? (
-                      <div className="text-center py-3">
-                        <div className="spinner-border spinner-border-sm text-primary" role="status" />
-                        <p className="small text-muted mb-0 mt-2">Cargando documentos del postulante...</p>
-                      </div>
-                    ) : erroresDocumentosPorUsuario[s.usuarioId] ? (
-                      <div className="alert alert-danger mb-0">
-                        {erroresDocumentosPorUsuario[s.usuarioId]}
-                      </div>
-                    ) : acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).length === 0 ? (
-                      <div className="alert alert-secondary mb-0">
-                        Este postulante no tiene documentos aceptados.
-                      </div>
-                    ) : (
-                      <div className="row g-3">
-                        {acceptedDocuments(documentosPorUsuario[s.usuarioId] || []).map((doc) => (
-                          <div key={doc.id} className="col-12 col-lg-6">
-                            <div className="border rounded-3 p-3 h-100 bg-light">
-                              <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                <div>
-                                  <div className="fw-semibold">{documentTypeLabel(doc)}</div>
-                                  <div className="small text-muted">{doc.nombre}</div>
-                                </div>
-                                <span className={`badge ${documentStatusBadgeClass(doc.estadoId)}`}>
-                                  {documentStatusLabel(doc)}
-                                </span>
-                              </div>
-                              <div className="row g-2 small">
-                                <div className="col-12 col-md-6">
-                                  <div className="text-muted">Documento ID</div>
-                                  <div>{doc.id}</div>
-                                </div>
-                                <div className="col-12 col-md-6">
-                                  <div className="text-muted">Usuario ID</div>
-                                  <div>{doc.usuarioId}</div>
-                                </div>
-                                <div className="col-12 col-md-6">
-                                  <div className="text-muted">Subido el</div>
-                                  <div>{formatDate(doc.fechaSubido)}</div>
-                                </div>
-                                <div className="col-12 col-md-6">
-                                  <div className="text-muted">Estado</div>
-                                  <div>{documentStatusLabel(doc)}</div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-
-                <div className="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
-                  <button
-                    type="button"
-                    className="btn btn-success"
-                    onClick={() => actualizar(s.id, "ACEPTADA")}
-                    disabled={s.estado !== "PENDIENTE" || processingId === s.id}
-                  >
-                    {processingId === s.id ? (
+                  {/* Info del arrendatario */}
+                  <div className="border rounded p-3 mb-3 bg-light">
+                    <p className="fw-semibold mb-1 small text-uppercase text-muted">Solicitante</p>
+                    {s.usuario ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                        Procesando...
+                        <p className="mb-0 fw-bold">
+                          {s.usuario.pnombre} {s.usuario.snombre ?? ""} {s.usuario.papellido}
+                        </p>
+                        <p className="mb-0 small text-muted">{s.usuario.email}</p>
+                        {s.usuario.ntelefono && (
+                          <p className="mb-0 small text-muted">{s.usuario.ntelefono}</p>
+                        )}
                       </>
                     ) : (
-                      "Aceptar postulante"
+                      <p className="mb-0 text-muted small">Usuario #{s.usuarioId}</p>
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => actualizar(s.id, "RECHAZADA")}
-                    disabled={s.estado !== "PENDIENTE" || processingId === s.id}
-                  >
-                    {processingId === s.id ? "Procesando..." : "Rechazar postulante"}
-                  </button>
+                  </div>
+
+                  {/* Precio y fecha */}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <p className="mb-0 small text-muted">Precio mensual</p>
+                      <p className="fw-bold text-success mb-0">
+                        {s.propiedad?.precioMensual
+                          ? `$${s.propiedad.precioMensual.toLocaleString("es-CL")} ${s.propiedad.divisa ?? "CLP"}`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div className="text-end">
+                      <p className="mb-0 small text-muted">Fecha solicitud</p>
+                      <p className="mb-0 small">{new Date(s.fechaSolicitud).toLocaleString("es-CL")}</p>
+                    </div>
+                  </div>
+
+                  {/* Acciones — solo para PENDIENTE */}
+                  {s.estado === "PENDIENTE" && (
+                    <div className="d-flex gap-2 mt-auto">
+                      {/* Botón Aceptar */}
+                      <button
+                        type="button"
+                        className="btn btn-success btn-sm flex-fill"
+                        disabled={processingId === s.id}
+                        onClick={() => abrirModalAceptar(s)}
+                      >
+                        ✓ Aceptar
+                      </button>
+
+                      {/* Botón Rechazar con confirmación inline */}
+                      {confirmRechazarId === s.id ? (
+                        <>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm flex-fill"
+                            disabled={processingId === s.id}
+                            onClick={() => rechazar(s.id)}
+                          >
+                            {processingId === s.id ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" />
+                                Procesando...
+                              </>
+                            ) : (
+                              "Confirmar rechazo"
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            disabled={processingId === s.id}
+                            onClick={() => setConfirmRechazarId(null)}
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm flex-fill"
+                          disabled={processingId === s.id}
+                          onClick={() => setConfirmRechazarId(s.id)}
+                        >
+                          ✗ Rechazar
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Mensaje para estados finales */}
+                  {s.estado === "ACEPTADA" && (
+                    <div className="alert alert-success py-2 mb-0 small mt-2">
+                      Solicitud aceptada. El contrato de arriendo ha sido creado.
+                    </div>
+                  )}
+                  {s.estado === "RECHAZADA" && (
+                    <div className="alert alert-danger py-2 mb-0 small mt-2">
+                      Solicitud rechazada.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            );
-          })}
+          ))}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════
+          MODAL: Crear registro de arriendo
+      ══════════════════════════════════════════ */}
+      {modal && (
+        <div
+          className="modal d-block"
+          tabIndex={-1}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.6)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 1050,
+          }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Aceptar solicitud y crear contrato</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={cerrarModal}
+                  disabled={modal.submitting}
+                />
+              </div>
+
+              <div className="modal-body">
+                {/* Resumen de la solicitud */}
+                <div className="alert alert-info py-2 small mb-4">
+                  <strong>{modal.solicitud.propiedad?.titulo || `Propiedad #${modal.solicitud.propiedadId}`}</strong>
+                  <br />
+                  Arrendatario:{" "}
+                  {modal.solicitud.usuario
+                    ? `${modal.solicitud.usuario.pnombre} ${modal.solicitud.usuario.papellido}`
+                    : `Usuario #${modal.solicitud.usuarioId}`}
+                </div>
+
+                {modal.error && (
+                  <div className="alert alert-danger py-2 small">{modal.error}</div>
+                )}
+
+                {/* Fecha de inicio */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Fecha de inicio <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={modal.fechaInicio}
+                    min={hoy()}
+                    disabled={modal.submitting}
+                    onChange={(e) =>
+                      setModal((m) => m && { ...m, fechaInicio: e.target.value, error: null })
+                    }
+                  />
+                </div>
+
+                {/* Fecha de fin (opcional) */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Fecha de fin{" "}
+                    <span className="text-muted fw-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={modal.fechaFin}
+                    min={modal.fechaInicio || hoy()}
+                    disabled={modal.submitting}
+                    onChange={(e) =>
+                      setModal((m) => m && { ...m, fechaFin: e.target.value, error: null })
+                    }
+                  />
+                </div>
+
+                {/* Monto mensual */}
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">
+                    Monto mensual (CLP) <span className="text-danger">*</span>
+                  </label>
+                  <div className="input-group">
+                    <span className="input-group-text">$</span>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={modal.montoMensual}
+                      min={1}
+                      disabled={modal.submitting}
+                      onChange={(e) =>
+                        setModal((m) => m && { ...m, montoMensual: e.target.value, error: null })
+                      }
+                    />
+                    <span className="input-group-text">CLP</span>
+                  </div>
+                  {modal.solicitud.propiedad?.precioMensual && (
+                    <div className="form-text">
+                      Precio publicado:{" "}
+                      <strong>
+                        ${modal.solicitud.propiedad.precioMensual.toLocaleString("es-CL")}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={cerrarModal}
+                  disabled={modal.submitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={confirmarAceptar}
+                  disabled={modal.submitting}
+                >
+                  {modal.submitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                      Procesando...
+                    </>
+                  ) : (
+                    "Confirmar y crear contrato"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

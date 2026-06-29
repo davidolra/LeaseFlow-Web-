@@ -19,23 +19,23 @@ import MisArriendos from "./paginas/MisArriendos";
 import { ROLES } from "./config/apiConfig"; 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [flash, setFlash] = useState<{ variant: "success" | "danger"; message: string } | null>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const isHome = location.pathname === "/";
-  const userRole = localStorage.getItem("userRole") || "";
+  const isHome = location.pathname === "/";
+  const userRole = localStorage.getItem("userRole") || "";
   const normalizedRole = userRole.toUpperCase();
   const isAdmin = isLoggedIn && normalizedRole === ROLES.ADMIN;
   const isPropietario = isLoggedIn && normalizedRole === ROLES.PROPIETARIO;
   const isArrendatario = isLoggedIn && normalizedRole === ROLES.ARRIENDATARIO;
 
 
-  useEffect(() => {
-    const storedLogin = localStorage.getItem("isLoggedIn");
-    if (storedLogin === "true") setIsLoggedIn(true);
-  }, []);
+  useEffect(() => {
+    const storedLogin = localStorage.getItem("isLoggedIn");
+    if (storedLogin === "true") setIsLoggedIn(true);
+  }, []);
 
   useEffect(() => {
     const onAuthChanged = () => {
@@ -60,18 +60,18 @@ function App() {
     return () => window.clearTimeout(id);
   }, [flash]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userRole");
-    setIsLoggedIn(false);
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
+    setIsLoggedIn(false);
     window.dispatchEvent(new Event("lf-auth-changed"));
-    navigate("/");
-  };
+    navigate("/");
+  };
 
-  return (
-    <div className="app-container">
+  return (
+    <div className="app-container">
       {flash ? (
         <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1085 }}>
           <div className={`alert alert-${flash.variant} shadow-sm mb-0`} role="alert">
@@ -175,6 +175,19 @@ function App() {
                     <span className="lf-tooltip">
                       <span className="lf-tooltip-title">Gestor Propiedades</span>
                       <span className="lf-tooltip-sub">/gestor-propiedades</span>
+                    </span>
+                  </Link>
+
+                  <Link to="/gestor-solicitudes" title="Gestor Solicitudes" className={`lf-sidebar-link${location.pathname === "/gestor-solicitudes" ? " active" : ""}`}>
+                    <span className="lf-ico" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                        <path d="M4 7h16v14H4z" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M7 3h10v4H7z" stroke="currentColor" strokeWidth="1.8" />
+                      </svg>
+                    </span>
+                    <span className="lf-tooltip">
+                      <span className="lf-tooltip-title">Gestor Solicitudes</span>
+                      <span className="lf-tooltip-sub">/gestor-solicitudes</span>
                     </span>
                   </Link>
 
@@ -456,7 +469,8 @@ function App() {
             <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
             <Route path="/gestion-contacto" element={<GestionContacto />} />
             <Route path="/mis-solicitudes" element={<MisSolicitudes />} />
-            <Route path="/solicitudes-recibidas" element={<SolicitudesRecibidas />} />
+            <Route path="/solicitudes-recibidas" element={<SolicitudesRecibidas scope="MINE" />} />
+            <Route path="/gestor-solicitudes" element={<SolicitudesRecibidas scope="ALL" />} />
             <Route path="/mis-arriendos" element={<MisArriendos />} />
           </Routes>
         </div>
@@ -474,8 +488,8 @@ function App() {
           </div>
         </footer>
       </div>
-    </div>
-  );
+    </div>
+  );
 }
 
 export default App;
