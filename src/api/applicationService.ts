@@ -86,9 +86,9 @@ export const solicitudService = {
     }
   },
 
-  async obtenerPorUsuario(usuarioId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
+  async obtenerPorUsuario(usuarioId: number, includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}`;
+      const url = `${BASE_URL}/solicitudes/usuario/${usuarioId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders(),
@@ -108,9 +108,9 @@ export const solicitudService = {
     }
   },
 
-  async obtenerPorPropiedad(propiedadId: number, _includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
+  async obtenerPorPropiedad(propiedadId: number, includeDetails: boolean = true): Promise<SolicitudArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}`;
+      const url = `${BASE_URL}/solicitudes/propiedad/${propiedadId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders(),
@@ -225,9 +225,9 @@ export const registroService = {
     }
   },
 
-  async obtenerPorSolicitud(solicitudId: number, _includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
+  async obtenerPorSolicitud(solicitudId: number, includeDetails: boolean = true): Promise<RegistroArriendoDTO[]> {
     try {
-      const url = `${BASE_URL}/registros/solicitud/${solicitudId}`;
+      const url = `${BASE_URL}/registros/solicitud/${solicitudId}?includeDetails=${includeDetails}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders(),
