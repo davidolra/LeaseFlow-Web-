@@ -7,7 +7,6 @@ import Arrienda from "./paginas/arrienda";
 import Login from "./paginas/login";
 import Registro from "./paginas/Registro";
 import Perfil from "./paginas/perfil";
-import Valoraciones from "./paginas/Valoraciones";
 import GestionPropiedades from "./paginas/GestionPropiedades";
 import GestionDocumentos from "./paginas/GestionDocumentos"; 
 import AdminDashboard from "./paginas/AdminDashboard";
@@ -391,21 +390,7 @@ function App() {
                 </span>
               </Link>
 
-              <Link
-                to="/valoraciones"
-                title="Valoraciones"
-                className={`lf-sidebar-link${location.pathname === "/valoraciones" ? " active" : ""}`}
-              >
-                <span className="lf-ico" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-                    <path d="M12 3l2.7 5.7 6.3.9-4.6 4.5 1.1 6.3L12 17.9 6.5 20.3 7.6 14 3 9.6l6.3-.9L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className="lf-tooltip">
-                  <span className="lf-tooltip-title">Valoraciones</span>
-                  <span className="lf-tooltip-sub">/valoraciones</span>
-                </span>
-              </Link>
+
             </>
           ) : null}
         </nav>
@@ -462,7 +447,6 @@ function App() {
             <Route path="/mis-propiedades" element={<GestionPropiedades scope={isAdmin ? "MINE" : "AUTO"} />} />
             <Route path="/gestor-propiedades" element={<GestionPropiedades scope="ALL" />} />
             <Route path="/gestion-propiedades" element={<GestionPropiedades />} />
-            <Route path="/valoraciones" element={<Valoraciones />} />
             
             <Route path="/gestion-documentos" element={<GestionDocumentos />} />
             <Route path="/admin" element={<AdminDashboard />} />

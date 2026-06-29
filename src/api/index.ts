@@ -35,6 +35,9 @@ export {
 // Contact Service (8085)
 export { contactService } from './contactService';
 
+// Review Service (8086)
+export { reviewService } from './reviewService';
+
 // Re-export de tipos
 export type {
   // User Service
