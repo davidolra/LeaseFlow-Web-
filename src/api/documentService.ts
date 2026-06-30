@@ -1,5 +1,6 @@
 import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
+import { normalizeApiData } from '../utils/textEncoding';
 import type {
   DocumentoDTO,
   CrearDocumentoRequest,
@@ -12,7 +13,7 @@ const BASE_URL = API_CONFIG.DOCUMENT_SERVICE;
 
 async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
-    const errorData: ErrorResponse = await response.json();
+    const errorData = normalizeApiData<ErrorResponse>(await response.json());
     return { message: errorData.message || `Error ${response.status}` };
   } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
@@ -36,7 +37,7 @@ export const documentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<DocumentoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'crear');
     }
@@ -58,7 +59,7 @@ export const documentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<DocumentoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -80,7 +81,7 @@ export const documentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<DocumentoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -112,7 +113,7 @@ export const documentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<DocumentoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorUsuario(${usuarioId})`);
     }
@@ -130,7 +131,7 @@ export const documentoService = {
         return false;
       }
 
-      return await response.json();
+      return normalizeApiData<boolean>(await response.json());
     } catch (error: unknown) {
       console.warn(
         `Advertencia verificando documentos aprobados del usuario ${usuarioId}:`,
@@ -158,7 +159,7 @@ export const documentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<DocumentoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizarEstado(${documentoId})`);
     }
@@ -200,7 +201,7 @@ export const estadoDocumentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<EstadoDocumentoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -221,7 +222,7 @@ export const estadoDocumentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<EstadoDocumentoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -244,7 +245,7 @@ export const tipoDocumentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<TipoDocumentoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -265,7 +266,7 @@ export const tipoDocumentoService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<TipoDocumentoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }

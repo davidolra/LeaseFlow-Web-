@@ -1,5 +1,6 @@
 import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
+import { normalizeApiData } from '../utils/textEncoding';
 import type {
   SolicitudArriendoDTO,
   CrearSolicitudRequest,
@@ -12,7 +13,7 @@ const BASE_URL = API_CONFIG.APPLICATION_SERVICE;
 
 async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
-    const errorData: ErrorResponse = await response.json();
+    const errorData = normalizeApiData<ErrorResponse>(await response.json());
     return { message: errorData.message || `Error ${response.status}` };
   } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
@@ -36,7 +37,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'crear');
     }
@@ -58,7 +59,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -80,7 +81,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -102,7 +103,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorUsuario(${usuarioId})`);
     }
@@ -124,7 +125,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorPropiedad(${propiedadId})`);
     }
@@ -151,7 +152,7 @@ export const solicitudService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<SolicitudArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizarEstado(${id})`);
     }
@@ -175,7 +176,7 @@ export const registroService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RegistroArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'crear');
     }
@@ -197,7 +198,7 @@ export const registroService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RegistroArriendoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -219,7 +220,7 @@ export const registroService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RegistroArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -241,7 +242,7 @@ export const registroService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RegistroArriendoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorSolicitud(${solicitudId})`);
     }
@@ -262,7 +263,7 @@ export const registroService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RegistroArriendoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `finalizar(${id})`);
     }

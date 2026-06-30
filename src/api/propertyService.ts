@@ -1,5 +1,6 @@
 import { API_CONFIG, getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
+import { normalizeApiData } from '../utils/textEncoding';
 import type {
   PropiedadDTO,
   CrearPropiedadRequest,
@@ -32,7 +33,7 @@ const unwrapPage = <T>(data: unknown): T[] => {
 
 async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
-    const errorData: ErrorResponse = await response.json();
+    const errorData = normalizeApiData<ErrorResponse>(await response.json());
     return { message: errorData.message || `Error ${response.status}` };
   } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
@@ -58,7 +59,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<PropiedadDTO>(await response.json());
     } catch (error) {
       console.error('Error al crear propiedad:', error);
       throw error;
@@ -80,7 +81,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      const data = await response.json();
+      const data = normalizeApiData<unknown>(await response.json());
       return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
       console.error('Error al listar propiedades:', error);
@@ -103,7 +104,7 @@ export const propiedadService = {
           const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
         }
 
-        const data = await response.json();
+        const data = normalizeApiData<unknown>(await response.json());
         return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
         console.error(`Error al listar propiedades del propietario ${propietarioId}:`, error);
@@ -126,7 +127,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<PropiedadDTO>(await response.json());
     } catch (error) {
       console.error(`Error al obtener propiedad ${id}:`, error);
       throw error;
@@ -184,7 +185,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      const data = await response.json();
+      const data = normalizeApiData<unknown>(await response.json());
       return unwrapPage<PropiedadDTO>(data);
     } catch (error) {
       console.error('Error al buscar propiedades:', error);
@@ -207,7 +208,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<PropiedadDTO>(await response.json());
     } catch (error) {
       console.error(`Error al actualizar propiedad ${id}:`, error);
       throw error;
@@ -247,7 +248,7 @@ export const propiedadService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<FotoDTO[]>(await response.json());
     } catch (error) {
       console.error(`Error al obtener fotos de propiedad ${propiedadId}:`, error);
       throw error;
@@ -270,7 +271,7 @@ export const comunaService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<ComunaDTO[]>(await response.json());
     } catch (error) {
       console.error('Error al listar comunas:', error);
       throw error;
@@ -288,7 +289,7 @@ export const comunaService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<ComunaDTO>(await response.json());
     } catch (error) {
       console.error(`Error al obtener comuna ${id}:`, error);
       throw error;
@@ -311,7 +312,7 @@ export const regionService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<RegionDTO[]>(await response.json());
     } catch (error) {
       console.error('Error al listar regiones:', error);
       throw error;
@@ -334,7 +335,7 @@ export const tipoService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<TipoPropiedadDTO[]>(await response.json());
     } catch (error) {
       console.error('Error al listar tipos:', error);
       throw error;
@@ -357,7 +358,7 @@ export const categoriaService = {
         const errorData = await parseErrorResponse(response); throw ErrorHandlerService.handle({ status: response.status, message: errorData.message }, String(response.status));
       }
 
-      return await response.json();
+      return normalizeApiData<CategoriaDTO[]>(await response.json());
     } catch (error) {
       console.error('Error al listar categorías:', error);
       throw error;

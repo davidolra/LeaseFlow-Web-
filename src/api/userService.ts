@@ -1,12 +1,13 @@
 import API_CONFIG, { getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
+import { normalizeApiData } from '../utils/textEncoding';
 import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO, CrearUsuarioRequest } from '../types';
 
 const BASE_URL = API_CONFIG.USER_SERVICE;
 
 async function parseErrorResponse(response: Response): Promise<{ message: string; validationErrors?: Record<string, string> }> {
   try {
-    return await response.json();
+    return normalizeApiData<{ message: string; validationErrors?: Record<string, string> }>(await response.json());
   } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
   }
@@ -37,7 +38,7 @@ export const userService = {
         );
       }
 
-      const data: LoginResponse = await response.json();
+      const data = normalizeApiData<LoginResponse>(await response.json());
       console.log('✅ Login exitoso');
 
       return {
@@ -68,7 +69,7 @@ export const userService = {
         );
       }
 
-      const data = await response.json();
+      const data = normalizeApiData<UsuarioDTO>(await response.json());
       console.log('Usuario registrado exitosamente');
       return data;
     } catch (error: unknown) {
@@ -92,7 +93,7 @@ export const userService = {
         );
       }
 
-      const data = await response.json();
+      const data = normalizeApiData<UsuarioDTO>(await response.json());
       console.log('Usuario obtenido');
       return data;
     } catch (error: unknown) {
@@ -116,7 +117,7 @@ export const userService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<UsuarioDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizar(${id})`);
     }
@@ -137,7 +138,7 @@ export const userService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<UsuarioDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizarRol(${id})`);
     }
@@ -158,7 +159,7 @@ export const userService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<UsuarioDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizarEstado(${id})`);
     }
@@ -250,7 +251,7 @@ export const userService = {
       });
 
       if (!response.ok) return false;
-      return await response.json();
+      return normalizeApiData<boolean>(await response.json());
     } catch (error: unknown) {
       console.warn(`Advertencia verificando existencia de usuario ${id}:`, error);
       return false;
@@ -273,7 +274,7 @@ export const userService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<UsuarioDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -295,7 +296,7 @@ export const rolService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RolDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -315,7 +316,7 @@ export const rolService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<RolDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -337,7 +338,7 @@ export const estadoUsuarioService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<EstadoUsuarioDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listar');
     }
@@ -357,7 +358,7 @@ export const estadoUsuarioService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<EstadoUsuarioDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }

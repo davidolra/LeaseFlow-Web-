@@ -1,5 +1,6 @@
 import API_CONFIG, { getAuthHeaders } from '../config/apiConfig';
 import { ErrorHandlerService } from '../core/errors';
+import { normalizeApiData } from '../utils/textEncoding';
 import type {
   MensajeContactoDTO,
   RespuestaMensajeDTO,
@@ -10,7 +11,7 @@ const BASE_URL = API_CONFIG.CONTACT_SERVICE;
 
 async function parseErrorResponse(response: Response): Promise<{ message: string }> {
   try {
-    return await response.json();
+    return normalizeApiData<{ message: string }>(await response.json());
   } catch (_error: unknown) {
     return { message: `Error ${response.status}: ${response.statusText}` };
   }
@@ -35,7 +36,7 @@ export const contactService = {
         );
       }
 
-      const data = await response.json();
+      const data = normalizeApiData<MensajeContactoDTO>(await response.json());
       console.log('✅ Mensaje enviado exitosamente');
       return data;
     } catch (error: unknown) {
@@ -58,7 +59,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listarTodos');
     }
@@ -79,7 +80,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `obtenerPorId(${id})`);
     }
@@ -99,7 +100,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `listarPorEmail(${email})`);
     }
@@ -119,7 +120,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `listarPorUsuario(${usuarioId})`);
     }
@@ -141,7 +142,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `listarPorEstado(${estado})`);
     }
@@ -161,7 +162,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'listarSinResponder');
     }
@@ -181,7 +182,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO[]>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `buscarPorPalabraClave(${keyword})`);
     }
@@ -204,7 +205,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `actualizarEstado(${id})`);
     }
@@ -226,7 +227,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<MensajeContactoDTO>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, `responderMensaje(${id})`);
     }
@@ -264,7 +265,7 @@ export const contactService = {
         );
       }
 
-      return await response.json();
+      return normalizeApiData<EstadisticasContacto>(await response.json());
     } catch (error: unknown) {
       throw ErrorHandlerService.handle(error, 'obtenerEstadisticas');
     }
